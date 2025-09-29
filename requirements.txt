@@ -1,0 +1,8 @@
+# requirements.txt
+# DS 442 Project 1 – River Crossing Puzzle
+# No external dependencies are required.
+# All used libraries are part of the Python standard library.
+# (e.g., collections, heapq, math, sys, argparse)
+
+# If you later add testing or helper packages, list them below:
+# pytest==8.3.3

@@ -1,5 +1,7 @@
 
 def read_input(file_name = "input.txt"):
+
+    #reeading initial file from input.tct
     with open(file_name, "r") as f:
         line = f.readline().strip()
 
@@ -12,6 +14,98 @@ def read_input(file_name = "input.txt"):
     parts = line.split(",")
     M_left, C_left, M_right, C_right, Boat = parts
     return (int(M_left), int(C_left), int(M_right), int(C_right), Boat)
+
+def is_goal(state):
+    #checking if goal state has been reached (all missionaries and cannibals are on the right side)
+    M_left, C_left, M_right, C_right, Boat = state 
+    return M_left == 0 and C_left == 0 #checking that missionaries and cannibals are both zero
+
+
+def is_valid(state):
+    """
+    Making sure all the state values make sense, so they arent negative, or 
+    there cannibals outnumbering missionaries, 
+    This method just makes sure the number of missionaries to cannibals is proper before moving ahead with the next successor state
+    """
+
+    M_left, C_left, M_right, C_right, Boat = state
+    # No negative values
+    if min(M_left, C_left, M_right, C_right) < 0:
+        return False
+    # If missionaries are on the left, cannibals can't outnumber them
+    if M_left > 0 and C_left > M_left:
+        return False
+    # If missionaries are on the right, there cannot be more cannibals than missionaries
+    if M_right > 0 and C_right > M_right:
+        return False
+    #the state is good if not
+    return True
+
+def successor(state): 
+    #technically the edges? so either there is one missionary 0 cannibal, 1 cannibal 0 missionary, 1 of each
+    M_left, C_left, M_right, C_right, Boat = state
+    """
+    the paths are the diffeernt ways in which the missionaries and cannibals can move
+    the  boat can carry 1 or 2 people. The valid moves are:
+    1 Missionary (M)
+    1 Cannibal (C)
+    2 Missionaries (M, M)
+    2 Cannibals (C, C)
+    1 Missionary and 1 Cannibal (M, C)
+    """
+    paths = [(0,1) (1,0), (1, 1), (2,0), (0, 2)]
+    succcessor = []
+
+    if Boat == "L":
+        for m, c in paths:
+            #the different possibilites of the new state, are looped through by the for loop
+            new_state = (M_left - m, C_left - c, M_right + m, C_right + c, "R")
+            if is_valid(new_state):
+                successor.append(new_state) #adding the next state to the path (the state is acting like a node in a tree)
+    else: #if the boat is on the right side, you would move in the opposing direction
+        for m, c in paths:
+            new_state = (M_left + m, C_left + c, M_right - m, C_right - c, "L")
+            if is_valid(new_state):
+                successor.append(new_state) #adding this state on to the tree path
+    
+    return successor
+
+def dfs(start):
+
+    """
+    DFS is a graph traversal algorithm that explores the deepest path possible along a branch before backtracking
+    in the context of the missionaries and cannibals:
+    - the different successor states are the nodes which are entered into stack
+    - dfs starts at the first state (given by input.txt) and moved in all the posssible directions (with the for loop it
+    iterating through all possible moves) going further down the tree
+    - finally, whenever the dfs algorithm reaches either the goal state of (0,0,3,3,R) or a dead end, 
+    it backtracks, and explores other paths
+    """
+    #the stack has bot the current state, and the path
+    stack = [(start, [start])]
+    visited = set() #making a set for visited that is empty because nothing has been visited yet
+
+
+
+
+
+
+
+if __name__ == "__main__" : 
+
+    start = read_input("input.txt")  # Read initial state from input.txt
+    print(start)
+
+    # Run DFS to solve the puzzle
+    path, cost, expansions = dfs(start)
+    #goal state: (0, 0, 3, 3, R)
+
+    
+
+
+
+
+
 
 # def dfsRec(adj, visited, s, res):
 #     #list marking what vertices have either been or not been visited 

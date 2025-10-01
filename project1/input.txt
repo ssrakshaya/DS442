@@ -1,1 +1,1 @@
-M_left,C_left,M_right,C_right,Boat
+3, 3, 0, 0, L

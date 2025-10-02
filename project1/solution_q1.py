@@ -1,3 +1,4 @@
+from collections import deque
 
 def read_input(file_name = "input.txt"):
 
@@ -11,7 +12,7 @@ def read_input(file_name = "input.txt"):
     # Boat is either L (left) or R (right).
 
     # Question 1.1.1a
-    parts = line.split(",")
+    parts = [p.strip() for p in line.split(",")]
     M_left, C_left, M_right, C_right, Boat = parts
     return (int(M_left), int(C_left), int(M_right), int(C_right), Boat)
 
@@ -93,7 +94,7 @@ def dfs(start):
         visited.add(state) #mark the current state as visited
         explored += 1 #you have explored further along the tree
 
-        if is_goal(state): #if the state is equibalent to the goal state
+        if is_goal(state): #if the state is equivalent to the goal state
             return path, len(path)-1, explored
         
         for succ in get_successors(state):
@@ -101,6 +102,38 @@ def dfs(start):
                 stack.append((succ, path + [succ]))
         
     return None, None, explored
+
+def bfs(start):
+    """
+    Breadth First: finds the shortest and fewest action path
+    BFS explores a graph or tree level by level. BFS visits ALL its immediate neighbors before moving on
+    to the next level of nodes. This ensures all nodes at one level are processed 
+    """
+
+    #the stack has both the current state, and the path
+    queue = deque([(start, [start])])
+    visited = set() #making a set for visited that is empty because nothing has been visited yet
+    expansions = 0 #this counts the number of paths which had been explored previously
+
+    while queue: #while there are still nodes to process
+        state, path = queue.popleft() #BFS uses a QUEUE NOT STACK - first in first out
+        
+        if state in visited: #check if node has been visited
+            continue
+        
+        ## Goal check BEFORE expansion if you want to NOT count the goal as an expansion.
+        if is_goal(state):
+            return path, len(path)-1, expansions #returning the matching node path
+        
+        visited.add(state) #mark node as visited
+        expansions +=1 #add cost to the exploration
+
+        #enqueue all univisted neighbors (perhaps children) of the current node
+        for succ in get_successors(state):
+            if succ not in visited:
+                queue.append((succ, path + [succ])) #adding unvisted neighbors to the quueue
+        
+    return None, None, expansions
 
 
 
@@ -121,16 +154,15 @@ if __name__ == "__main__" :
 
     #goal state: (0, 0, 3, 3, R)
 
+    #Run BFS:
+    path, cost, expansions = bfs(start)
+    print("The solution of Q1.1.b (BFS) is:")
+    print("Solution Path:", path)
+    print("Total cost =", cost)
+    print("Number of node expansions =", expansions)
+
     
 
 
 
 
-
-
-# def dfsRec(adj, visited, s, res):
-#     #list marking what vertices have either been or not been visited 
-#     visited[s] = True
-#     res.append(s) 
-
-#     #recursively visit 

@@ -41,7 +41,7 @@ def is_valid(state):
     #the state is good if not
     return True
 
-def successor(state): 
+def get_successors(state): 
     #technically the edges? so either there is one missionary 0 cannibal, 1 cannibal 0 missionary, 1 of each
     M_left, C_left, M_right, C_right, Boat = state
     """
@@ -53,8 +53,8 @@ def successor(state):
     2 Cannibals (C, C)
     1 Missionary and 1 Cannibal (M, C)
     """
-    paths = [(0,1) (1,0), (1, 1), (2,0), (0, 2)]
-    succcessor = []
+    paths = [(0,1), (1,0), (1, 1), (2,0), (0, 2)]
+    successor = []
 
     if Boat == "L":
         for m, c in paths:
@@ -84,8 +84,23 @@ def dfs(start):
     #the stack has bot the current state, and the path
     stack = [(start, [start])]
     visited = set() #making a set for visited that is empty because nothing has been visited yet
+    explored = 0 #this counts the number of paths which had been explored previously
 
+    while stack: 
+        state, path = stack.pop() #state is the current node, while path is the sequence of nodes which make up DFS
+        if state in visited: #if the node has already been vsited, skip to next
+            continue
+        visited.add(state) #mark the current state as visited
+        explored += 1 #you have explored further along the tree
 
+        if is_goal(state): #if the state is equibalent to the goal state
+            return path, len(path)-1, explored
+        
+        for succ in get_successors(state):
+            if succ not in visited:
+                stack.append((succ, path + [succ]))
+        
+    return None, None, explored
 
 
 
@@ -94,10 +109,16 @@ def dfs(start):
 if __name__ == "__main__" : 
 
     start = read_input("input.txt")  # Read initial state from input.txt
-    print(start)
+    #print(start)
 
     # Run DFS to solve the puzzle
     path, cost, expansions = dfs(start)
+     # Print the solution in the required format
+    print("The solution of Q1.1.a (DFS) is:")
+    print("Solution Path:", path)
+    print("Total cost =", cost)
+    print("Number of node expansions =", expansions)
+
     #goal state: (0, 0, 3, 3, R)
 
     

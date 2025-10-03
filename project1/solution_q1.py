@@ -87,15 +87,19 @@ def dfs(start):
     visited = set() #making a set for visited that is empty because nothing has been visited yet
     explored = 0 #this counts the number of paths which had been explored previously
 
-    while stack: 
+    while len(stack) > 0: 
         state, path = stack.pop() #state is the current node, while path is the sequence of nodes which make up DFS
         if state in visited: #if the node has already been vsited, skip to next
             continue
-        visited.add(state) #mark the current state as visited
-        explored += 1 #you have explored further along the tree
+
+        # visited.add(state) #mark the current state as visited
+        # explored += 1 #you have explored further along the tree
 
         if is_goal(state): #if the state is equivalent to the goal state
             return path, len(path)-1, explored
+        
+        visited.add(state) #mark the current state as visited
+        explored += 1 #you have explored further along the tree
         
         for succ in get_successors(state):
             if succ not in visited:
@@ -117,10 +121,14 @@ def bfs(start):
 
     while queue: #while there are still nodes to process
         state, path = queue.popleft() #BFS uses a QUEUE NOT STACK - first in first out
-        
+        #expansions +=1 #add cost to the exploration
+
         if state in visited: #check if node has been visited
             continue
         
+        # visited.add(state) #mark node as visited
+        # expansions +=1 #add cost to the exploration
+
         ## Goal check BEFORE expansion if you want to NOT count the goal as an expansion.
         if is_goal(state):
             return path, len(path)-1, expansions #returning the matching node path

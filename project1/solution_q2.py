@@ -113,6 +113,7 @@ def step_cost(current, next, model):
 
 
 def reconstruct_path(visited, start, goal):
+    #reconstructing the path from start goal to end goal by following the nodes that have been visited so far
     path = [goal]
     current = goal
     while current != start:
@@ -123,29 +124,39 @@ def reconstruct_path(visited, start, goal):
     return path
 
 def ucs(start, model):
-    pq = [(0, start)]
+
+    pq = [(0, start)] #priority queue
+
+    #Dictionary which stores the cost of the shortest path to each node
     visited = {start: (0, None)}        # state -> (best_g, parent)
     expansions = 0
 
+    #when there are still nodes in the priority queue
     while pq:
+
+        #pop the node with the lowest cost from the queue, saving it into two different variables - the g cost, and the state itself
         g, state = heapq.heappop(pq)
 
-        # skip stale entries
+        # only looking at the lowest cost entry for a given state
         if g != visited.get(state, (inf, None))[0]:
             continue
-
+        
+        #checking that the state is  goal state
         if is_goal(state):
-            path = reconstruct_path(visited, start, state)
+            path = reconstruct_path(visited, start, state) #tracing the path back
             return path, g, expansions
 
         expansions += 1
 
+        #for loop goes through all the neighbors of the current state
         for succ in get_successors(state):
+            #computing the cost of the step by passing into the cost calculating function
             step = step_cost(state, succ, model)
-            new_g = g + step
+            new_g = g + step #g is cumulative cost to the current state
+            #if this successor has not been visited, or it has a cost lower than another one, add it
             if succ not in visited or new_g < visited[succ][0]:
-                visited[succ] = (new_g, state)
-                heapq.heappush(pq, (new_g, succ))
+                visited[succ] = (new_g, state) #record the new path
+                heapq.heappush(pq, (new_g, succ)) #push the neighbors into the priority queue
 
     return None, None, expansions
 

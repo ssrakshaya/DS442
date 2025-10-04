@@ -161,25 +161,25 @@ def ucs(start, model):
     return None, None, expansions
 
 #HELPER FUNCTION
-def show_actions_with_cost(path, model):
-    if not path:
-        print("No solution path.")
-        return
-    total = 0
-    print("Actions (with step costs):")
-    for prev, nxt in zip(path, path[1:]):
-        # derive moved passengers + direction
-        M_left, C_left, M_right, C_right, Boat  = prev
-        M_left2, C_left2, M_right2, C_right2, Boat2 = nxt
-        if Boat == 'L':
-            moved_M, moved_C, direction = (M_left - M_left2), (C_left - C_left2), "L→R"
-        else:
-            moved_M, moved_C, direction = (M_right - M_right2), (C_right - C_right2), "R→L"
+# def show_actions_with_cost(path, model):
+#     if not path:
+#         print("No solution path.")
+#         return
+#     total = 0
+#     print("Actions (with step costs):")
+#     for prev, nxt in zip(path, path[1:]):
+#         # derive moved passengers + direction
+#         M_left, C_left, M_right, C_right, Boat  = prev
+#         M_left2, C_left2, M_right2, C_right2, Boat2 = nxt
+#         if Boat == 'L':
+#             moved_M, moved_C, direction = (M_left - M_left2), (C_left - C_left2), "L→R"
+#         else:
+#             moved_M, moved_C, direction = (M_right - M_right2), (C_right - C_right2), "R→L"
 
-        step = step_cost(prev, nxt, model)
-        total += step
-        print(f"  {direction}: {moved_M}M, {moved_C}C   cost = {step}")
-    print(f"Recomputed total cost = {total}\n")
+#         step = step_cost(prev, nxt, model)
+#         total += step
+#         print(f"  {direction}: {moved_M}M, {moved_C}C   cost = {step}")
+#     print(f"Recomputed total cost = {total}\n")
 
 
 

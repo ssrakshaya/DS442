@@ -115,6 +115,10 @@ def h2(state):
     h2_total = math.ceil((2*M_left + C_left) / 3)
     return h2_total
 
+def h3(state):
+    M_left, C_left, M_right, C_right, Boat = state
+    return max(2*M_left, C_left)
+
 
 def reconstruct_path(best_g, start, goal):
     #reconstructing the path from start goal to end goal by following the nodes that have been visited so far
@@ -180,7 +184,7 @@ if __name__ == "__main__" :
     start = read_input("input.txt")  # Read initial state from input.txt
     #print(start)
 
-    # Run Cost Model A with A*
+    # Run H1 with A*
     #path, cost, expansions = dfs(start)
     # Print the solution in the required format
     # Model A
@@ -192,9 +196,17 @@ if __name__ == "__main__" :
 
     #goal state: (0, 0, 3, 3, R)
 
-    #Run Cost Model B with A*
+    #Run H2 with A*
     path, cost, expansions = astar(start, h2)
     print("The solution of Q3.1 (Heuristic 2) is:")
+    print("Solution Path:", path)
+    print("Total cost =", cost)
+    print("Number of node expansions =", expansions)
+
+    #Run H3 with A*
+    # Heuristic 3
+    path, cost, expansions = astar(start, h3)
+    print("The solution of Q3.1 (Heuristic 3) is:")
     print("Solution Path:", path)
     print("Total cost =", cost)
     print("Number of node expansions =", expansions)

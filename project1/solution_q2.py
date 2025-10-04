@@ -183,51 +183,6 @@ def ucs(start, model):
 
 
 
-#CHAT 
-"""
-def uniform_cost(start, model):
-    
-    # starting state has zero code. then remove the next node from the list, which is currently technically the node with the minimum cost
-    # if selected path is the target, it can be returning
-    # when the boat = L, then we know the missionaries and cannibals are moving from left to right
-    # when boat = r M and C or moving right to left
-    # when computing the path (so next state) which is traveled, you also need to add on the 
-    # the cost of each missionary nad each cannibal
-
-    
-
-    heap = [(0, start, [start])]   # (g cost, state, path following)
-    best_g = {start: 0} #the best cost possible thus far with the path we go through
-    expansions = 0
-
-    while heap:
-        #g is cost so far to reach a state, 
-        #state is the current tuple of locations where cannibals missionaries and everyone else are in
-        #path, tuple seuences used to get there 
-        g, state, path = heapq.heappop(heap)
-
-        if g!= best_g.get(state, inf):
-            continue
-            
-        # Goal test BEFORE expansion → don't count goal as expanded
-        if is_goal(state):
-            return path, g, expansions
-
-        expansions += 1
-
-        for succ in get_successors(state):
-            step = step_cost(state, succ, model)
-            new_g = g + step
-            if new_g < best_g.get(succ, inf):
-                best_g[succ] = new_g
-                heapq.heappush(heap, (new_g, succ, path + [succ]))
-
-    return None, None, expansions
-"""
-
-
-
-
 
 
 
@@ -245,7 +200,7 @@ if __name__ == "__main__" :
     print("Solution Path:", path)
     print("Total cost =", cost)
     print("Number of node expansions =", expansions)
-    show_actions_with_cost(path, "A")   # <— add this
+    #show_actions_with_cost(path, "A")   # <— add this
 
     #goal state: (0, 0, 3, 3, R)
 
@@ -255,4 +210,4 @@ if __name__ == "__main__" :
     print("Solution Path:", path)
     print("Total cost =", cost)
     print("Number of node expansions =", expansions)
-    show_actions_with_cost(path, "B")
+    #show_actions_with_cost(path, "B")

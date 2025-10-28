@@ -7,3 +7,10 @@ __pycache__/
 .DS_Store
 project_env/
 *.zip
+# ignore zips and build artifacts
+*.zip
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
+venv/

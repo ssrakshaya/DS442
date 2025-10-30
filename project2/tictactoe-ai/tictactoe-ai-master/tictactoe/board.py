@@ -106,7 +106,7 @@ class Board:
             list[Square]: list of empty squres
         """
         return [
-            square for square in self.squares.values() if self.is_empty(square)
+            square for square in self.squares.values() if self.is_empty(square) #list of empty squares
         ]
 
     def reset(self):
@@ -125,10 +125,10 @@ class Board:
         Returns:
             Optional[tuple[int, int]]: (row, col) if square exists
         """
-        for pos, sq in self.squares.items():
-            if sq == square:
+        for pos, sq in self.squares.items(): #pos is the row and col, sq is the square number
+            if sq == square: #if the square number is the same as the square number passed in, then return the row and col
                 return pos
-        return None
+        return None #if the square number is not found, then return None
 
     def square_name(self, row: int, col: int) -> Square:
         """Convert row, col into square
@@ -136,7 +136,7 @@ class Board:
         Returns:
             Square: corresponding number
         """
-        return self.squares[(row, col)]
+        return self.squares[(row, col)] #return the square number for the given row and col
 
     def square_value(self, square: Square) -> Symbol:
         """Get the symbol of the square
@@ -211,11 +211,11 @@ class Board:
     def _update(self):
         """Update the turn and score if there's winner
         """
-        self.turn = Symbol.CROSS if self.turn == Symbol.CIRCLE else Symbol.CIRCLE
+        self.turn = Symbol.CROSS if self.turn == Symbol.CIRCLE else Symbol.CIRCLE #alternate the turn
         if self.winner() == Symbol.CIRCLE:
-            self.p1_score += 1
+            self.p1_score += 1 #increment the score for the Ai
         elif self.winner() == Symbol.CROSS:
-            self.p2_score += 1
+            self.p2_score += 1 #increment the score for the opponent
 
     def push(self, square: Square, value: Symbol):
         """Store the symbol into the square
@@ -240,6 +240,7 @@ class Board:
         Args:
             square (Square): square name
         """
+        #Current logic, 1. place symbole, 2. update turn, 3. check winner
         if square >= self.size**2 or square < 0 or not self.is_empty(square):
             print("Invalid move!")
             return

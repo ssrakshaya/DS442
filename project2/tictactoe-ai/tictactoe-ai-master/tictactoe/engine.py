@@ -27,6 +27,8 @@ class Engine:
                 board.push(move, self.ai) #push the move to the board
                 eval_ = self.minimax(board, False, depth + 1, alpha, beta)[0] #evaluate the board
                 board.undo(move)
+
+
                 max_eval = max(max_eval, eval_) #max_eval is the best score for the Ai 
                 if max_eval == eval_: #if the max_eval is the same as the eval_, then the best move is the move
                     best_move = move
@@ -41,6 +43,8 @@ class Engine:
                 board.push(move, self.foe)
                 eval_ = self.minimax(board, True, depth + 1, alpha, beta)[0] #evaluate the board
                 board.undo(move) 
+
+                
                 min_eval = min(min_eval, eval_) #min_eval is the best score for the opponent
                 if min_eval == eval_: #if the min_eval is the same as the eval_, then the best move is the move
                     best_move = move

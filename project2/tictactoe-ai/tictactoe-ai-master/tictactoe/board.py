@@ -1,3 +1,4 @@
+from os import curdir
 from typing import Optional
 from enum import Enum
 
@@ -30,16 +31,22 @@ class Board:
         Args:
             size (int, optional): Board dimension
         """
-        self.size: int = size
-        self.p1_score: int = 0
-        self.p2_score: int = 0
+        self.size: int = size #board size
+        self.p1_score: int = 0 #score for the first player (perhaps AI)
+        self.p2_score: int = 0 #score for the second played
 
-        self.squares: dict[[int, int], Square] = self.get_squares()
-        self.table: list[Symbol] = self.get_table()
-        self.win_conditions: list[list[Square]] = self.get_win_conditions()
+        self.squares: dict[[int, int], Square] = self.get_squares() #dictionary of squares convert row,col into Square
+        self.table: list[Symbol] = self.get_table() #stores the current board state, use Square as index
+        self.win_conditions: list[list[Square]] = self.get_win_conditions() #All possible connections to win the game
 
-        self.first_move: Symbol = Symbol.CIRCLE
-        self.turn: Symbol = self.first_move
+        self.first_move: Symbol = Symbol.CIRCLE #first move is the symbol for the Ai
+        self.turn: Symbol = self.first_move #turn is the current turn
+
+        #the Board TRACKS if we are in response mode (one person made 3 in a row, the other player gets a MOVE)
+        self.in_response_mode: bool = False #if True, the board will print the response mode (for debugging)   
+        #TRACK who made the first 3 in a row, so we know who wins if resposnse fails
+        self.get_first_three: Optional[Symbol] = None #who made the first 3 in a row
+        
 
     def get_win_conditions(self) -> list[list[Square]]:
         """Get all winning connections, for all board sizes
@@ -47,7 +54,7 @@ class Board:
         Returns:
             list[list[Square]]: list of rows, cols, diagonals 
         """
-        rows, cols = self.get_rows_cols()
+        rows, cols = self.get_rows_cols() 
         diagonals = self.get_diagonals()
         return rows + cols + diagonals
 
@@ -211,6 +218,36 @@ class Board:
     def _update(self):
         """Update the turn and score if there's winner
         """
+
+        # Check if the CURRENT player (who just moved) made 3-in-a-row
+        first_three = self.get_first_three()
+
+        #First Case: Someone received a three in a row
+        if len(first_three) > 0:
+            current_player = self.turn #whoever just made the turn becomes the current player
+
+            #First Situation - if th first player has made 3 in a row, and player B ALSO made 3 in a row 
+            if self.in_response_mode:
+                #the responder made a three in a row and won, meaning the responder is the winner, and game is over
+                self.in_response_mode = False #exit the response made, because game isover
+            # A player just made three in a row
+            else:
+                #go back to response mode
+                self.in_response_mode = True
+
+                self.get_first_three = current_player #remember who got first three
+
+                #switching turns so now player 2 gets their move (e=must get 3 in a row to win)
+                if self.turn == Symbol.CIRCLE: #switching o to x
+                    self.turn = Symbol.CROSS
+                else:
+                    self.turn = Symbol.CIRCLE #switching x's to o's
+
+
+
+
+
+
         self.turn = Symbol.CROSS if self.turn == Symbol.CIRCLE else Symbol.CIRCLE #alternate the turn
         if self.winner() == Symbol.CIRCLE:
             self.p1_score += 1 #increment the score for the Ai

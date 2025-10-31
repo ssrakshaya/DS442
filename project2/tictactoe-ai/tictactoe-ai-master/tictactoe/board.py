@@ -47,7 +47,7 @@ class Board:
         #the Board TRACKS if we are in response mode (one person made 3 in a row, the other player gets a MOVE)
         self.in_response_mode: bool = False #if True, the board will print the response mode (for debugging)   
         #TRACK who made the first 3 in a row, so we know who wins if resposnse fails
-        self.get_first_three: Optional[Symbol] = None #who made the first 3 in a row
+        self.first_connection_player: Optional[Symbol] = None #who made the first 3 in a row
         
 
     def get_win_conditions(self) -> list[list[Square]]:
@@ -124,6 +124,11 @@ class Board:
         self.table = self.get_table()
         self.first_move = Symbol.CROSS if self.first_move == Symbol.CIRCLE else Symbol.CIRCLE
         self.turn = self.first_move
+
+         # ADD THESE LINES:
+        self.in_response_mode = False
+        self.first_connection_player = None
+
 
     def square_pos(self, square: Square) -> Optional[tuple[int, int]]:
         """Get row, col of the square
@@ -205,13 +210,13 @@ class Board:
             - If someone makes 3 in a row first, opponent gets to move n response (if they get that, they would win)
             - Winner is only determined after response move is finished (so if the next player gets a 3 in a row, they win)
         """
-        connection = self.get_first_three()
+        connection = self.get_connection()
 
         #if there are no 3 in a rows: so the length of connection is zero
         if len(connection) == 0:
             #check if we are in the response mode, because the responder failed to get 3 in a row
             if self.in_response_mode:
-                return self.get_first_three #whoever got the three in a row first 
+                return self.first_connection_player #whoever got the three in a row first 
             return None
 
         #a playerA  with three in a row
@@ -262,7 +267,7 @@ class Board:
         """
 
         # Check if the CURRENT player (who just moved) made 3-in-a-row
-        first_three = self.get_first_three()
+        first_three = self.get_connection()
 
         #First Case: Someone received a three in a row
         if len(first_three) > 0:
@@ -277,7 +282,7 @@ class Board:
                 #go back to response mode
                 self.in_response_mode = True
 
-                self.get_first_three = current_player #remember who got first three
+                self.first_connection_player = current_player #remember who got first three
 
                 #switching turns so now player 2 gets their move (e=must get 3 in a row to win)
                 if self.turn == Symbol.CIRCLE: #switching o to x
@@ -324,11 +329,13 @@ class Board:
         prev_state = {
             'turn': self.turn,
             'in_response_mode': self.in_response_mode,
-            'get_first_three': self.get_first_three
+            'first_connection_player': self.first_connection_player
         }
 
         #updating the state 
         self.table[square] = value #putting the symbol into a certain square
+
+        self._update()
         
         return prev_state
 
@@ -344,7 +351,7 @@ class Board:
         #restore the previous state
         self.turn = prev_state['turn']
         self.in_response_mode = prev_state['in_response_mode']
-        self.get_first_three = prev_state['first_three_connections_player']
+        self.first_connection_player = prev_state['first_connection_player']
 
 
     def move(self, square: Square):

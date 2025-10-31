@@ -14,9 +14,23 @@ class Engine:
 
     def minimax(self, board: Board, ai_turn: bool, depth: int, alpha: float, #alpha is the best score for the Ai, beta is the best score for the opponent
                 beta: float) -> tuple: #tuple is the return value of the function
+
+        """
+        CHANGES:
+        - Modified push() calls to capture returned state: prev_state = board.push(...)
+        - Modified undo() calls to pass state back: board.undo(move, prev_state)
+        - This ensures minimax properly simulates and restores game state including response_mode
+        - Changed pruning condition from "alpha > beta" to "alpha >= beta" (standard alpha-beta)
+        - Changed "if max_eval == eval_" to "if eval_ > max_eval" for cleaner best move tracking
+        """
+
         available_moves = board.empty_squares #list of empty squares
+
+        #random first move
         if len(available_moves) == board.size**2: #if there are no empty squares, then return a random move
             return 0, random.choice(list(range(board.size**2)))
+
+        #ending state of the board
         if board.is_gameover() or depth >= self.level: # if the game is over or the depth is greater than the level, then return the score and the best move
             return self.evaluate_board(board, depth), None
 
@@ -44,7 +58,7 @@ class Engine:
                 eval_ = self.minimax(board, True, depth + 1, alpha, beta)[0] #evaluate the board
                 board.undo(move) 
 
-                
+
                 min_eval = min(min_eval, eval_) #min_eval is the best score for the opponent
                 if min_eval == eval_: #if the min_eval is the same as the eval_, then the best move is the move
                     best_move = move

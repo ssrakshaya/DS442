@@ -357,8 +357,10 @@ class Board:
         if square >= self.size**2 or square < 0 or not self.is_empty(square):
             print("Invalid move!")
             return
-        self.push(square, self.turn)
-        self._update()
+        
+        self.push(square, self.turn) #use push to update the board internally
+        
+        #self._update()
 
     def print(self):
         """Represent the board in string

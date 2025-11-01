@@ -126,7 +126,7 @@ class Board:
         self.first_move = Symbol.CROSS if self.first_move == Symbol.CIRCLE else Symbol.CIRCLE
         self.turn = self.first_move
 
-         # ADD THESE LINES:
+         #making sure we rest all the first three conections, whether board is in response mode all to false 
         self.in_response_mode = False
         self.first_connection_player = None
 
@@ -271,13 +271,101 @@ class Board:
         
         return False
         
-        #return self.winner() is not None or self.is_draw()
 
+    # def _update(self):
+    #     """Update the turn and score if there's winner
+    #     """
+
+    #     # Check if the CURRENT player (who just moved) made 3-in-a-row
+    #     first_three = self.get_connection()
+
+    #     #First Case: Someone received a three in a row
+    #     if len(first_three) > 0:
+    #         current_player = self.turn #whoever just made the turn becomes the current player
+
+    #         #First Situation - if th first player has made 3 in a row, and player B ALSO made 3 in a row 
+    #         if self.in_response_mode:
+    #             #the responder made a three in a row and won, meaning the responder is the winner, and game is over
+    #             #self.in_response_mode = False #exit the response made, because game isover
+
+    #             player_with_connection = self.square_value(first_three[0])
+                
+    #             if player_with_connection != self.first_connection_player:
+    #                 self.game_winner = player_with_connection
+    #                 self.in_response_mode = False
+
+    #                 # Update score only when winner is first set
+    #                 if player_with_connection == Symbol.CIRCLE:
+    #                     self.p1_score += 1
+    #                 else:
+    #                     self.p2_score += 1
+
+    #             else:
+    #                 self.game_winner = self.first_connection_player
+    #                 self.in_response_mode = False
+
+    #                 # Update score only when winner is first set
+    #                 if self.first_connection_player == Symbol.CIRCLE:
+    #                     self.p1_score += 1
+    #                 else:
+    #                     self.p2_score += 1
+
+
+    #         # A player just made three in a row
+    #         else:
+    #             #go back to response mode
+    #             self.in_response_mode = True
+
+    #             self.first_connection_player = current_player #remember who got first three
+
+    #             #switching turns so now player 2 gets their move (e=must get 3 in a row to win)
+    #             if self.turn == Symbol.CIRCLE: #switching o to x
+    #                 self.turn = Symbol.CROSS
+    #             else:
+    #                 self.turn = Symbol.CIRCLE #switching x's to o's
+        
+    #     #Second Case: NO three in a row has been made at this turn
+    #     else:
+    #         #in response mode (the other player has to make move) but the responder did not get three in a row
+    #         if self.in_response_mode:
+    #             #the player A wins because they made three in a row, so you leave response mode
+    #             # First player wins!
+    #             self.game_winner = self.first_connection_player
+    #             self.in_response_mode = False
+
+    #             # Update score only when winner is first set
+    #             if self.first_connection_player == Symbol.CIRCLE:
+    #                 self.p1_score += 1
+    #             else:
+    #                 self.p2_score += 1
+
+
+    #         #no three in a row at all
+    #         else:
+    #             #switch players normally:
+    #             if self.turn == Symbol.CIRCLE: #switching o to x
+    #                 self.turn = Symbol.CROSS
+    #             else:
+    #                 self.turn = Symbol.CIRCLE #switching x's to o's
+    
+    #     # #updating scores based on who has won the game or not
+    #     # winner_symbol = self.winner()
+    #     # if winner_symbol == Symbol.CIRCLE:
+    #     #     self.p1_score += 1
+    #     # elif winner_symbol == Symbol.CROSS:
+    #     #     self.p2_score += 1
+
+
+    #     # self.turn = Symbol.CROSS if self.turn == Symbol.CIRCLE else Symbol.CIRCLE #alternate the turn
+    #     # if self.winner() == Symbol.CIRCLE:
+    #     #     self.p1_score += 1 #increment the score for the Ai
+    #     # elif self.winner() == Symbol.CROSS:
+    #     #     self.p2_score += 1 #increment the score for the opponent
     def _update(self):
         """Update the turn and score if there's winner
         """
 
-        # Check if the CURRENT player (who just moved) made 3-in-a-row
+        # Check if the CURRENT player (who just moved) made three in a row
         first_three = self.get_connection()
 
         #First Case: Someone received a three in a row
@@ -289,23 +377,34 @@ class Board:
                 #the responder made a three in a row and won, meaning the responder is the winner, and game is over
                 #self.in_response_mode = False #exit the response made, because game isover
 
-                player_with_connection = self.square_value(first_three[0])
+                # Count total connections, to determine if smeomone won
+                num_connections = 0
+                for row in self.win_conditions:
+                    checklist = []
+                    for square in row:
+                        if self.is_empty(square):
+                            continue
+                        checklist.append(self.square_value(square))
+                    if len(checklist) == self.size and len(set(checklist)) == 1:
+                        num_connections += 1
                 
-                if player_with_connection != self.first_connection_player:
-                    self.game_winner = player_with_connection
+                if num_connections == 2:
+                    #the second person made a three in a row, so they win
+                    self.game_winner = self.turn
                     self.in_response_mode = False
 
-                    # Update score only when winner is first set
-                    if player_with_connection == Symbol.CIRCLE:
+                    #Update score only when winner is determined
+                    if self.turn == Symbol.CIRCLE:
                         self.p1_score += 1
                     else:
                         self.p2_score += 1
 
                 else:
+                    
                     self.game_winner = self.first_connection_player
                     self.in_response_mode = False
 
-                    # Update score only when winner is first set
+                    #Update score only when winner is determined 
                     if self.first_connection_player == Symbol.CIRCLE:
                         self.p1_score += 1
                     else:
@@ -330,11 +429,11 @@ class Board:
             #in response mode (the other player has to make move) but the responder did not get three in a row
             if self.in_response_mode:
                 #the player A wins because they made three in a row, so you leave response mode
-                # First player wins!
+                #First player wins
                 self.game_winner = self.first_connection_player
                 self.in_response_mode = False
 
-                # Update score only when winner is first set
+                #Update score only when winner is first determined
                 if self.first_connection_player == Symbol.CIRCLE:
                     self.p1_score += 1
                 else:
@@ -348,7 +447,7 @@ class Board:
                     self.turn = Symbol.CROSS
                 else:
                     self.turn = Symbol.CIRCLE #switching x's to o's
-    
+
         # #updating scores based on who has won the game or not
         # winner_symbol = self.winner()
         # if winner_symbol == Symbol.CIRCLE:
@@ -357,7 +456,6 @@ class Board:
         #     self.p2_score += 1
 
 
-        # self.turn = Symbol.CROSS if self.turn == Symbol.CIRCLE else Symbol.CIRCLE #alternate the turn
         # if self.winner() == Symbol.CIRCLE:
         #     self.p1_score += 1 #increment the score for the Ai
         # elif self.winner() == Symbol.CROSS:

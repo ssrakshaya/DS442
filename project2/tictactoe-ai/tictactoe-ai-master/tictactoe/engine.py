@@ -15,15 +15,6 @@ class Engine:
     def minimax(self, board: Board, ai_turn: bool, depth: int, alpha: float, #alpha is the best score for the Ai, beta is the best score for the opponent
                 beta: float) -> tuple: #tuple is the return value of the function
 
-        """
-        CHANGES:
-        - Modified push() calls to capture returned state: prev_state = board.push(...)
-        - Modified undo() calls to pass state back: board.undo(move, prev_state)
-        - This ensures minimax properly simulates and restores game state including response_mode
-        - Changed pruning condition from "alpha > beta" to "alpha >= beta" (standard alpha-beta)
-        - Changed "if max_eval == eval_" to "if eval_ > max_eval" for cleaner best move tracking
-        """
-
         available_moves = board.empty_squares #list of empty squares
 
         #random first move
@@ -54,11 +45,7 @@ class Engine:
                     max_eval = eval_
                     best_move = move
 
-                # max_eval = max(max_eval, eval_) #max_eval is the best score for the Ai 
-                # if max_eval == eval_: #if the max_eval is the same as the eval_, then the best move is the move
-                #     best_move = move
-
-
+                
                 alpha = max(alpha, max_eval) #alpha is the best score for the Ai 
                 if alpha >= beta: #if alpha is greater than beta, then the Ai has found a better move, and we can prune the remaining branches
                     #return max_eval, best_move
@@ -80,9 +67,6 @@ class Engine:
                 # CHANGED: Go back to previous state
                 board.undo(move, prev_state)
 
-
-                #min_eval = min(min_eval, eval_) #min_eval is the best score for the opponent
-
                 # Track best move
                 if eval_ < min_eval:
                     min_eval = eval_
@@ -101,33 +85,23 @@ class Engine:
     def evaluate_board(self, board: Board, depth: int) -> Score:
 
         """
-        CHANGES:
-        - Logic stays mostly the same!
-        - The magic: winner() and is_gameover() now implement wild tic-tac-toe rules
-        - So this function automatically evaluates correctly for wild tic-tac-toe
-        - Minimax recursion naturally explores "what if opponent responds" scenarios
-        
-        HOW IT WORKS:
-        - When AI makes 3-in-a-row, minimax explores opponent's response moves
-        - If opponent can respond with 3-in-a-row → that path leads to negative score (AI loses)
-        - If opponent cannot respond → that path leads to positive score (AI wins)
-        - Minimax picks the path that maximizes AI's score
+        - winner() and is_gameover() utilize wild tik tac toe
         """
 
         if board.is_gameover():
             winner = board.winner()
             
             if winner == self.ai:
-                # AI wins - prefer faster wins (higher score for lower depth)
+                #the second player wins, and you return the size 
                 return board.size**2 - depth
             elif winner == self.foe:
-                # AI loses - prefer slower losses (less negative for higher depth)
+                #the second player looses 
                 return -(board.size**2 + depth)
             else:
-                # Draw
+                #Draw situation 
                 return 0
         
-        # Non-terminal state
+        
         return 0
 
         # if board.winner() == self.ai:

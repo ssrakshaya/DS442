@@ -12,7 +12,7 @@ EMPTY = 'Empty' #is the board empty or not
 STRATEGIC_DEPLOYMENT = 'Strategic Deployment'
 TACTICAL_ASSAULT = 'Tactical Assault'
 
-class Game: 
+class GameState: 
     #the class represents what state the game is at 
 
     def __init__(self, tile_values: List[List[int]]):
@@ -231,6 +231,110 @@ class Game:
             from_row_number = from_row + 1
             return f"Tactical Assault from [{from_col_letter},{from_row_number}] to [{col_letter},{row_number}]"
 
+class MinimaxAgent:
+    #minimax controls the territory (we use minimax algorithm to make this work! )
+    def __init__(self, max_depth: int = 3):
+        
+        #initialize the minimax agent
+        #max_depth: Maximum search depth for minimax
+        
+        self.max_depth = max_depth
+        self.nodes_explored = 0
+
+    def get_best_move(self, state: GameState, team: str): #-> Tuple[str, Tuple, Optional[Tuple]]
+
+        #given the curent game state (with the boards and its scores) and which player (alpha or beta) is moving
+        #figuring out the Get the best move using Minimax algorithm
+    
+        self.nodes_explored = 0 #Resets the counter that tracks how many game states the algorithm will evaluate during this search.
+        
+        # Determine if we're maximizing or minimizing (alpha maximizies, and beta minimizes)
+        is_maximizing = (team == TEAM_ALPHA)
+        
+        best_move = None #stores the value that currently looks the best
+        if is_maximizing:
+            best_value = float('-inf') #alpha is initialized to negative infinity in alpha beta pruning
+        else:
+            best_value = float('inf') #beta is initialized to positive infinity because it is trying to score the lowest 
+        
+        #Try all legal moves, calling the method that makes sure the moves are possible
+        legal_moves = state.get_legal_moves(team)
+        
+        if not legal_moves:
+            return None #the team cannot move because there are no good legal moves (perhaps running out of spaces)
+        
+        for move in legal_moves: #loop through all possible moves
+            #Create new state and apply move
+            new_state = state.copy() #make a deep copy of the state so that we dont modify the actual board
+            new_state.apply_move(move, team) #Apply that move to the copy, producing a new possible board state.
+            
+            #Get value of this move
+            if is_maximizing:
+                value = self.minimax(new_state, self.max_depth - 1, float('-inf'), float('inf'), False)
+                if value > best_value: #if the current value is higher
+                    best_value = value #change alphas value to the larger one
+                    best_move = move #change the best move as well
+            else:
+                value = self.minimax(new_state, self.max_depth - 1, float('-inf'), float('inf'), True)
+                if value < best_value: #if new beta value is smaller
+                    best_value = value #change the beta value to the smaller one (minimizing agent)
+                    best_move = move #change move too
+        
+        return best_move #best move found by minimax
+    
+    def minimax(self, state: GameState, depth: int, alpha: float, beta: float, is_maximizing: bool):
+        """
+        Minimax algorithm with alpha-beta pruning
+        
+        Arguments
+            state: Current game state
+            depth: Remaining search depth
+            alpha: Alpha value for pruning
+            beta: Beta value for pruning
+            is_maximizing: True if maximizing player (Alpha), False if minimizing (Bravo)
+        
+        Returns:
+            Evaluation score of the state
+        """
+        #this is where the code decides what moves to takes, and uses alpha beta pruning
+
+        self.nodes_explored += 1 #look at how many nodes have been exploreed
+        
+        #Base case: terminal state or depth limit reached
+        if depth == 0 or state.is_terminal(): #where recursion stops,
+            return state.evaluate() #return alpha-beta
+        
+        if is_maximizing:
+            #Alpha's turn (maximizing agent)
+            max_eval = float('-inf') #initialized to negative inf (lowest possible number)
+            legal_moves = state.get_legal_moves(TEAM_ALPHA)
+            
+            for move in legal_moves: #exploring all the possible alpha moves
+
+                new_state = state.copy() #Copy the board so we don’t modify the real one.
+                new_state.apply_move(move, TEAM_ALPHA) #do the move
+                eval_score = self.minimax(new_state, depth - 1, alpha, beta, False) #call minimax recursively, and depth increase by 1
+                max_eval = max(max_eval, eval_score)
+                alpha = max(alpha, eval_score) #keeping track of highest value Alpha 
+                if beta <= alpha: #beta pruning here, because beta is smaller than alpha
+                    break  # Beta cutoff
+            
+            return max_eval
+        else:
+            # Beta's turn (minimizing)
+            min_eval = float('inf')
+            legal_moves = state.get_legal_moves(TEAM_BRAVO) #beta wnats to minimize the value (to make alpha as small as possible)
+            
+            for move in legal_moves: #explore all the possible beta moves
+                new_state = state.copy() #apply the beta move on a copt of the board
+                new_state.apply_move(move, TEAM_BRAVO)
+                eval_score = self.minimax(new_state, depth - 1, alpha, beta, True) #recursively call minimax
+                min_eval = min(min_eval, eval_score)
+                beta = min(beta, eval_score)
+                if beta <= alpha:
+                    break  #Alpha cutoff
+            
+            return min_eval #return the beta score that is the best
 
 
 def read_input_file(filename = 'input.txt'): #-> List[List[int]]

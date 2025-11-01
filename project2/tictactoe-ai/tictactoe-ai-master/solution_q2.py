@@ -219,18 +219,17 @@ class Game:
         move_type, position, from_position = move #move_type is either 'Strategic Deployment' or 'Tactical Assault' and position is the destination tile (a tuple (row, col))
         row, col = position
         
-        # Convert to letter-number notation (A-F, 1-6)
+        #converting the numeric coordiantes to letters of where they are
         col_letter = chr(ord('A') + col)
         row_number = row + 1
         
-        if move_type == STRATEGIC_DEPLOYMENT:
+        if move_type == STRATEGIC_DEPLOYMENT: #there is no from tile, just wher you end up
             return f"Strategic Deployment at [{col_letter},{row_number}]"
         else:
-            from_row, from_col = from_position
-            from_col_letter = chr(ord('A') + from_col)
+            from_row, from_col = from_position #where did we start from 
+            from_col_letter = chr(ord('A') + from_col) #making it characters that are easy to understand
             from_row_number = from_row + 1
             return f"Tactical Assault from [{from_col_letter},{from_row_number}] to [{col_letter},{row_number}]"
-
 
 
 
@@ -254,6 +253,60 @@ def read_input_file(filename = 'input.txt'): #-> List[List[int]]
             grid.append(row)
         
     return grid
+
+def play_game(tile_values: List[List[int]], max_depth: int = 3):
+    #playing the whole game 
+    #take in the tile values and the max depth 
+
+    # Initialize game state and AI agent
+    state = GameState(tile_values)
+    agent = MinimaxAgent(max_depth=max_depth)
+    
+    print("=" * 60)
+    print("TERRITORY CONTROL GAME - MINIMAX AI")
+    print("=" * 60)
+    print()
+    
+    #Play until game is over
+    while not state.is_terminal():
+        current_team = state.get_current_team() #using method to grab best team
+        
+        #Get best move from Minimax
+        best_move = agent.get_best_move(state, current_team)
+        
+        if best_move is None:
+            print(f"No legal moves available for {current_team}")
+            break
+        
+        # Apply the move
+        state.apply_move(best_move, current_team)
+        
+        # Print move information
+        print(f"Move {state.move_count}:")
+        print(f"Minimax action for team: {current_team}")
+        print(f"Action: {state.format_move_description(best_move)}")
+        print()
+        print(state.format_board())
+        print()
+        print(f"Total score - Alpha: {state.alpha_score}")
+        print(f"Total score - Bravo: {state.bravo_score}")
+        print("-" * 60)
+        print()
+    
+    #Game over - announce winner
+    print("=" * 60)
+    print("GAME OVER")
+    print("=" * 60)
+    if state.alpha_score > state.bravo_score: #if alpha scores higher than bravo
+        print(f"The Winner is: {TEAM_ALPHA}") #dynamically printing alphas win
+    elif state.bravo_score > state.alpha_score:
+        print(f"The Winner is: {TEAM_BRAVO}") #printing bravos win
+    else:
+        print("The game is a TIE!")
+    
+    print(f"Final Score - Alpha: {state.alpha_score}, Bravo: {state.bravo_score}")
+    print("=" * 60)
+
 
         
 def main():

@@ -105,15 +105,15 @@ class GameState:
         #This method figures out every possible move that a given team (Alpha or Bravo) 
         # can make right now, based on the current board.
 
-        """
-        Get all legal moves for a team
         
-        Returns:
-            List of moves as (move_type, position, from_position)
-            - Strategic Deployment: (STRATEGIC_DEPLOYMENT, (row, col), None)
-            - Tactical Assault: (TACTICAL_ASSAULT, (to_row, to_col), (from_row, from_col))
-        """
+        #Get all legal moves for a team
+        #What it returns! 
+        #  List of moves as (move_type, position, from_position)
+        #  Strategic Deployment: (STRATEGIC_DEPLOYMENT, (row, col), None)
+        #  Tactical Assault: (TACTICAL_ASSAULT, (to_row, to_col), (from_row, from_col))
+      
         moves = [] #empty list, and will add the deployment and assault moves into this
+        
         
         # Strategic Deployment: any unoccupied tile
         #this scans the entire input text board, for every position:
@@ -355,6 +355,9 @@ def read_input_file(filename = 'input.txt'): #-> List[List[int]]
             for x in parts:
                 row.append(int(x.strip()))
             grid.append(row)
+
+    if len(grid) != 6 or any(len(row) != 6 for row in grid):
+        raise ValueError("input.txt must be a 6x6 grid of integers")
         
     return grid
 

@@ -113,7 +113,9 @@ class GameState:
         #  Tactical Assault: (TACTICAL_ASSAULT, (to_row, to_col), (from_row, from_col))
       
         moves = [] #empty list, and will add the deployment and assault moves into this
-        
+        deployments = []
+        capturing_assaults = []
+        noncapturing_assaults = []
         
         # Strategic Deployment: any unoccupied tile
         #this scans the entire input text board, for every position:
@@ -121,18 +123,46 @@ class GameState:
         for row in range(GRID_SIZE):
             for col in range(GRID_SIZE):
                 if self.board[row][col] == EMPTY:
-                    moves.append((STRATEGIC_DEPLOYMENT, (row, col), None)) #appending a tuple for deploying another unit
+                    deployments.append((STRATEGIC_DEPLOYMENT, (row, col), None)) #appending a tuple for deploying another unit
         
+        # #Tactical Assault happens from any controlled tile to adjacent unoccupied tile
+        # for row in range(GRID_SIZE):
+        #     for col in range(GRID_SIZE): 
+        #         if self.board[row][col] == team: #if the tile is controlled by curent tema, look at neighboring tiles 
+        #             #Moving to each adjacent unoccupied tile
+        #             for adj_row, adj_col in self.get_adjacent_positions(row, col): #calling the adjacent positions method
+        #                 if self.board[adj_row][adj_col] == EMPTY: #if all are empty
+        #                     moves.append((TACTICAL_ASSAULT, (adj_row, adj_col), (row, col))) #append the tactical move to it
+        
+
         #Tactical Assault happens from any controlled tile to adjacent unoccupied tile
+        opponent = self.get_opponent_team(team)
         for row in range(GRID_SIZE):
-            for col in range(GRID_SIZE): 
-                if self.board[row][col] == team: #if the tile is controlled by curent tema, look at neighboring tiles 
-                    #Moving to each adjacent unoccupied tile
-                    for adj_row, adj_col in self.get_adjacent_positions(row, col): #calling the adjacent positions method
-                        if self.board[adj_row][adj_col] == EMPTY: #if all are empty
-                            moves.append((TACTICAL_ASSAULT, (adj_row, adj_col), (row, col))) #append the tactical move to it
+            for col in range(GRID_SIZE):
+                if self.board[row][col] == team:
+                    #moving to any tiles that are next to us and unoccupied
+                    for adj_row, adj_col in self.get_adjacent_positions(row, col):
+                        if self.board[adj_row][adj_col] == EMPTY:
+                            #Check if this move would capture any enemy tiles
+                            #meaning, is the destination adjacent to any enemy?)
+                            will_capture = any(
+                                self.board[ar][ac] == opponent
+                                for (ar, ac) in self.get_adjacent_positions(adj_row, adj_col)
+                            )
+                            
+                            if will_capture:
+                                capturing_assaults.append((TACTICAL_ASSAULT, (adj_row, adj_col), (row, col)))
+                            else:
+                                noncapturing_assaults.append((TACTICAL_ASSAULT, (adj_row, adj_col), (row, col)))
         
-        return moves
+        #If capturing assaults exist, only include those and the deployments
+        #If no capturing assults, include all assaults and deployments
+        if capturing_assaults:
+            return deployments + capturing_assaults
+        else:
+            return deployments + noncapturing_assaults
+    
+
 
     def apply_move(self, move: Tuple[str, Tuple, Optional[Tuple]], team: str):
         #the method applies either a deployment or assult to the current game state

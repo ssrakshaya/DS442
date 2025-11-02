@@ -124,16 +124,6 @@ class GameState:
             for col in range(GRID_SIZE):
                 if self.board[row][col] == EMPTY:
                     deployments.append((STRATEGIC_DEPLOYMENT, (row, col), None)) #appending a tuple for deploying another unit
-        
-        # #Tactical Assault happens from any controlled tile to adjacent unoccupied tile
-        # for row in range(GRID_SIZE):
-        #     for col in range(GRID_SIZE): 
-        #         if self.board[row][col] == team: #if the tile is controlled by curent tema, look at neighboring tiles 
-        #             #Moving to each adjacent unoccupied tile
-        #             for adj_row, adj_col in self.get_adjacent_positions(row, col): #calling the adjacent positions method
-        #                 if self.board[adj_row][adj_col] == EMPTY: #if all are empty
-        #                     moves.append((TACTICAL_ASSAULT, (adj_row, adj_col), (row, col))) #append the tactical move to it
-        
 
         #Tactical Assault happens from any controlled tile to adjacent unoccupied tile
         opponent = self.get_opponent_team(team)

@@ -5,7 +5,7 @@ from copy import deepcopy
 #these stay constant 
 GRID_SIZE = 6
 TEAM_ALPHA = 'Alpha' #alpha in minimax  
-TEAM_BRAVO = 'Bravo' #beta in minimax
+TEAM_BETA = 'Beta' #beta in minimax
 EMPTY = 'Empty' #is the board empty or not
 
 # Move types
@@ -34,7 +34,7 @@ class GameState:
             self.board.append(row)
 
         self.alpha_score = 0
-        self.bravo_score = 0
+        self.beta_score = 0
         self.move_count = 0
     
     def copy(self):
@@ -45,7 +45,7 @@ class GameState:
         new_state = GameState(self.tile_values)
         new_state.board = deepcopy(self.board)
         new_state.alpha_score = self.alpha_score
-        new_state.bravo_score = self.bravo_score
+        new_state.beta_score = self.beta_score
         new_state.move_count = self.move_count
         return new_state
 
@@ -62,19 +62,19 @@ class GameState:
         
         #getting what team's turn it is
         #self.move_count % 2 == 0 -> Alpha’s turn (even move count)
-        # self.move_count % 2 == 1 -> Bravo’s turn (odd move count)
+        # self.move_count % 2 == 1 -> beta’s turn (odd move count)
 
         if self.move_count % 2 == 0:
             return TEAM_ALPHA
         else:
-            return TEAM_BRAVO
+            return TEAM_BETA
     
     def get_opponent_team(self, team: str):
         """Get the opponent of the given team"""
         #given the name of one team, it will give you the other team's name 
         #(alternating from current team to next)
         if team == TEAM_ALPHA:
-            return TEAM_BRAVO
+            return TEAM_BETA
         else:
             return TEAM_ALPHA
     
@@ -102,7 +102,7 @@ class GameState:
     
     def get_legal_moves(self, team: str):
         #returning  a tuple of strings
-        #This method figures out every possible move that a given team (Alpha or Bravo) 
+        #This method figures out every possible move that a given team (Alpha or Beta) 
         # can make right now, based on the current board.
 
         
@@ -171,7 +171,7 @@ class GameState:
             if team == TEAM_ALPHA:
                 self.alpha_score += tile_value #add the points to the correct team! 
             else:
-                self.bravo_score += tile_value
+                self.beta_score += tile_value
                 
         elif move_type == TACTICAL_ASSAULT:
             #Occupy the new tile
@@ -180,7 +180,7 @@ class GameState:
             if team == TEAM_ALPHA:
                 self.alpha_score += tile_value
             else:
-                self.bravo_score += tile_value
+                self.beta_score += tile_value
             
             #Getting adjacent enemy tiles
             for adj_row, adj_col in self.get_adjacent_positions(row, col): #looking at all four adjacent tiles
@@ -192,9 +192,9 @@ class GameState:
                     #Increasing scores based on whose tiles got captured
                     if team == TEAM_ALPHA:
                         self.alpha_score += captured_value
-                        self.bravo_score -= captured_value
+                        self.beta_score -= captured_value
                     else:
-                        self.bravo_score += captured_value
+                        self.beta_score += captured_value
                         self.alpha_score -= captured_value
         
         self.move_count += 1 #updates the move count, so it will saywhose turn it is next, alpha to beta, or vice versa
@@ -203,7 +203,7 @@ class GameState:
         #doing alpha beta evaluation! 
         #the function gives an int score for how good the board is based on alpha's values
 
-        return self.alpha_score - self.bravo_score
+        return self.alpha_score - self.beta_score
 
     def format_board(self):
         #making the board pretty
@@ -217,7 +217,7 @@ class GameState:
                 #show value of tile and who owns it
                 if owner == TEAM_ALPHA:
                     row_values.append(f"A{value:2d}")
-                elif owner == TEAM_BRAVO:
+                elif owner == TEAM_BETA:
                     row_values.append(f"B{value:2d}")
                 else:
                     row_values.append(f" {value:2d}")
@@ -303,19 +303,18 @@ class MinimaxAgent:
         return best_move #best move found by minimax
     
     def minimax(self, state: GameState, depth: int, alpha: float, beta: float, is_maximizing: bool):
-        """
-        Minimax algorithm with alpha-beta pruning
         
-        Arguments
-            state: Current game state
-            depth: Remaining search depth
-            alpha: Alpha value for pruning
-            beta: Beta value for pruning
-            is_maximizing: True if maximizing player (Alpha), False if minimizing (Bravo)
+        #Minimax algorithm with alpha-beta pruning
         
-        Returns:
-            Evaluation score of the state
-        """
+        #Arguments:
+        #    state: Current game state
+        #    depth: Remaining search depth
+        #   alpha: Alpha value for pruning
+        #  beta: Beta value for pruning
+        # is_maximizing: True if maximizing player (Alpha), False if minimizing (Beta)
+        
+        #Returns: Evaluation score of the state
+        
         #this is where the code decides what moves to takes, and uses alpha beta pruning
 
         self.nodes_explored += 1 #look at how many nodes have been exploreed
@@ -343,11 +342,11 @@ class MinimaxAgent:
         else:
             # Beta's turn (minimizing)
             min_eval = float('inf')
-            legal_moves = state.get_legal_moves(TEAM_BRAVO) #beta wnats to minimize the value (to make alpha as small as possible)
+            legal_moves = state.get_legal_moves(TEAM_BETA) #beta wnats to minimize the value (to make alpha as small as possible)
             
             for move in legal_moves: #explore all the possible beta moves
                 new_state = state.copy() #apply the beta move on a copt of the board
-                new_state.apply_move(move, TEAM_BRAVO)
+                new_state.apply_move(move, TEAM_BETA)
                 eval_score = self.minimax(new_state, depth - 1, alpha, beta, True) #recursively call minimax
                 min_eval = min(min_eval, eval_score)
                 beta = min(beta, eval_score)
@@ -416,7 +415,7 @@ def play_game(tile_values: List[List[int]], max_depth: int = 3):
         print(state.format_board())
         print()
         print(f"Total score - Alpha: {state.alpha_score}")
-        print(f"Total score - Bravo: {state.bravo_score}")
+        print(f"Total score - Beta: {state.beta_score}")
         print("-" * 60)
         print()
     
@@ -424,14 +423,14 @@ def play_game(tile_values: List[List[int]], max_depth: int = 3):
     print("=" * 60)
     print("GAME OVER")
     print("=" * 60)
-    if state.alpha_score > state.bravo_score: #if alpha scores higher than bravo
+    if state.alpha_score > state.beta_score: #if alpha scores higher than beta
         print(f"The Winner is: {TEAM_ALPHA}") #dynamically printing alphas win
-    elif state.bravo_score > state.alpha_score:
-        print(f"The Winner is: {TEAM_BRAVO}") #printing bravos win
+    elif state.beta_score > state.alpha_score:
+        print(f"The Winner is: {TEAM_BETA}") #printing betaos win
     else:
         print("The game is a TIE!")
     
-    print(f"Final Score - Alpha: {state.alpha_score}, Bravo: {state.bravo_score}")
+    print(f"Final Score - Alpha: {state.alpha_score}, Beta: {state.beta_score}")
     print("=" * 60)
 
 

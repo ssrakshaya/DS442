@@ -6,3 +6,6 @@
 
 # If you later add testing or helper packages, list them below:
 # pytest==8.3.3
+
+gymnasium
+pygame

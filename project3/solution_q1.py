@@ -22,6 +22,34 @@ EPSILON_MIN = 0.01         #Minimum exploration rate
 Q = defaultdict(lambda: [0.0, 0.0])  # Q[state] = [Q(s,0), Q(s,1)]
 
 #Helper Functions
+def choose_action(state, epsilon): #pass in the state and exploration rate 
+
+    #epsilon is what we use to determine exploration vs. exploitation 
+    #with probability epsilon, you choose a random actions, which is exploration
+    #with probability 1-epsilon, you choose the action with the highest Q value, which is exploitation
+    """
+    ε-greedy action selection.
+    
+    Args:
+        state: Current game state (player_sum, dealer_card, usable_ace)
+        epsilon: Exploration probability
+    
+    Returns:
+        action: 0 (stick) or 1 (hit)
+    """
+    #random.random returns a decimal between 0-1. if that's less than epsilon, the agent ignores the Q table and picks a random action
+    if random.random() < epsilon:
+        #Exploration: random action
+        return random.choice([0, 1])
+    else:
+        #Exploitation: choose action with highest Q-value
+        if Q[state][0] >= Q[state][1]:
+            return 0 #stick
+        else:
+            return 1 #hit - more cards
+
+
+
 
 
 

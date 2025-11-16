@@ -18,6 +18,10 @@ EPSILON_MIN = 0.01         #Minimum exploration rate
 
 #black jack has two actions, either you stick or hit
 #for each state s, you need the Q value for hte state of either sticking or hitting
+#so the code, For any new state, automatically initializes its two Q-values (hit/stick) to 0
+Q = defaultdict(lambda: [0.0, 0.0])  # Q[state] = [Q(s,0), Q(s,1)]
+
+#Helper Functions
 
 
 

@@ -28,11 +28,9 @@ def choose_action(state, epsilon): #pass in the state and exploration rate
     #with probability epsilon, you choose a random actions, which is exploration
     #with probability 1-epsilon, you choose the action with the highest Q value, which is exploitation
     """
-    ε-greedy action selection.
-    
-    Args:
+    Arguments:
         state: Current game state (player_sum, dealer_card, usable_ace)
-        epsilon: Exploration probability
+        epsilon: Exploration probability (are we exploring or exploiting)
     
     Returns:
         action: 0 (stick) or 1 (hit)
@@ -47,6 +45,42 @@ def choose_action(state, epsilon): #pass in the state and exploration rate
             return 0 #stick
         else:
             return 1 #hit - more cards
+
+def update_q(state, action, reward, next_state, terminated):
+    """
+    This function updated one entry in the Q-table, with the value of taing an 'action' in the 'state' 
+    Q-learning update rule.
+    
+    Q(s,a) ← Q(s,a) + alpha[r + y·max_a'Q(s',a') - Q(s,a)]
+
+    Look at old Q-value for (state, action).
+    Use the reward + future value to compute a better estimate.
+    Slowly adjust Q(s,a) toward that better estimate.
+
+    Stop considering future value if the episode has ended.
+
+    td is temporal difference looking at teh difference vetween the old estimate of the action value at time to Q(s,a)
+    and the new better estimate using time t+1 
+    """
+    #Get the current estimate Q-value Q(s,a)
+    current_q = Q[state][action] #-> this is the agent's previous belief on how good it is to take an action in a state 
+    
+    #If episode terminated, there's no next state (max Q = 0)
+    if terminated: #handling terminal states 
+        max_next_q = 0.0 #if the epsiode is over, there is no future reward, and the value of the next state is 0 
+    else: #otherwise computing the future value of the state 
+        #Max Q-value for next state (best action we could take)
+        max_next_q = max(Q[next_state])
+    
+    #TD target: r + γ·max_a'Q(s',a')
+    td_target = reward + GAMMA * max_next_q #this is the number we want the current Q value to become
+    
+    #TD error: difference between target and current estimate
+    td_error = td_target - current_q
+    
+    #Update Q-value
+    Q[state][action] = current_q + ALPHA * td_error
+
 
 
 

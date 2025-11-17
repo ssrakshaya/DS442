@@ -18,14 +18,13 @@ ALPHA = 0.01               #Alpha - Learning rate (how much we update Q-values)
 GAMMA = 0.99               #Gamma - Discount factor (how much we value future rewards)
 EPSILON_START = 1.0        #Initial exploration rate
 EPSILON_MIN = 0.01         #Minimum exploration rate
-## DONT USE ITS OPTIONAL 
-EPSILON_DECAY = 0.99995    # Decay rate per episode
+EPSILON_DECAY = 0.99995    #Decay rate per episode
 
 
 #black jack has two actions, either you stick or hit
 #for each state s, you need the Q value for hte state of either sticking or hitting
 #so the code, For any new state, automatically initializes its two Q-values (hit/stick) to 0
-Q = defaultdict(lambda: [0.0, 0.0])  # Q[state] = [Q(s,0), Q(s,1)]
+Q = defaultdict(lambda: [0.0, 0.0])  #Q[state] = [Q(s,0), Q(s,1)]
 
 #Helper Functions
 def choose_action(state, epsilon): #pass in the state and exploration rate 
@@ -65,7 +64,7 @@ def update_q(state, action, reward, next_state, terminated):
 
     Stop considering future value if the episode has ended.
 
-    td is temporal difference looking at teh difference vetween the old estimate of the action value at time to Q(s,a)
+    td is temporal difference looking at the difference vetween the old estimate of the action value at time to Q(s,a)
     and the new better estimate using time t+1 
     """
     #Get the current estimate Q-value Q(s,a)
@@ -88,165 +87,85 @@ def update_q(state, action, reward, next_state, terminated):
     Q[state][action] = current_q + ALPHA * td_error
 
 
-# def train_blackjack():
-#     """
-#     Train Q-learning agent on Blackjack and track performance.
-#     - This plays many games of Blackjack using Q-learning, and each game slightly improves the Q-table's
-#     Q value so that the agent gets better
-
-
-#     """
-#     #create environment (training withOUT rendering) 
-#     env = gym.make('Blackjack-v1', natural=False, sab=False, render_mode=None)
-#     #TAKE OUT REMOVE BAD
-#     # Note: Use render_mode=None for training (much faster!)
-#     # Use render_mode="human" only for final visualization
-    
-#     #Points tracking
-#     #how well is t he agent doing? 
-#     wins = 0
-#     losses = 0
-#     draws = 0
-#     epsilon = EPSILON_START
-    
-#     print("Starting Q-Learning Training for Blackjack: ")
-#     print(f"Episodes: {NUM_EPISODES}, α={ALPHA}, γ={GAMMA}, ε={EPSILON_START}→{EPSILON_MIN}\n")
-    
-#     for episode in range(1, NUM_EPISODES + 1): #how many rounds of training
-#         #Reset environment and get initial state
-#         state, info = env.reset() #env.reset starts a few blackjack game and gives the first state
-#         terminated = False #is game over
-#         truncated = False #is game over
-#         episode_reward = 0 #reward is either -1, 0, or +1
-
-#         #Play one episode
-#         while not (terminated or truncated): #while not means keep going until the game ends
-#             #Choose action using ε-greedy policy
-#             action = choose_action(state, epsilon)
-            
-#             # Take action and observe result
-#             next_state, reward, terminated, truncated, info = env.step(action) #env.step applies the action to the environment
-#             #the next state: new situation after the move
-#             #reward: 0 during the game, but -1,0, or +1 at the end 
-#             #terminated tell u whether the game has ended or not
-            
-#             #Update Q-table, given the previous state and action, change the estiamte of how good this move was (training the q learning)
-#             update_q(state, action, reward, next_state, terminated or truncated)
-            
-#             #Move to next state
-#             state = next_state
-#             episode_reward += reward #dding rewards 
-        
-#         # Track results (reward is +1, 0, or -1)
-#         if episode_reward > 0:
-#             wins += 1
-#             result = "WIN"
-#         elif episode_reward < 0: #lost
-#             losses += 1
-#             result = "LOSS"
-#         else:
-#             draws += 1
-#             result = "DRAW"
-        
-#         #Decaying epsilon (reducing exploration over time)
-#         #when beginning training, the epslon vaue is large because of random exploration
-#         #but over time, u shrink towards the minimum epsiolon, so you rely more on the epsilon and not just random guessing
-#         epsilon = max(EPSILON_MIN, epsilon * EPSILON_DECAY)
-
-#         #Print progress every 1000 episodes
-#         if episode % 1000 == 0:
-#             total_games = wins + losses + draws
-#             win_rate = (wins / total_games) * 100 if total_games > 0 else 0
-#             print(f"Episode {episode:6d} | {result:4s} | "
-#                   f"Win Rate: {win_rate:.2f}% | "
-#                   f"W/L/D: {wins}/{losses}/{draws} | "
-#                   f"ε: {epsilon:.4f}")
-    
-#     env.close() #shuts down the environment.
-
-#     #Final scores and values
-#     total_games = wins + losses + draws
-#     win_rate = (wins / total_games) * 100
-    
-#     print("\n" + "="*60)
-#     print("TRAINING COMPLETE!")
-#     print("="*60)
-#     print(f"Total Episodes: {NUM_EPISODES}")
-#     print(f"Wins:   {wins:6d} ({(wins/total_games)*100:.2f}%)")
-#     print(f"Losses: {losses:6d} ({(losses/total_games)*100:.2f}%)")
-#     print(f"Draws:  {draws:6d} ({(draws/total_games)*100:.2f}%)")
-#     print(f"Final Win Rate: {win_rate:.2f}%")
-#     print("="*60)
-    
-#     return Q  #Return trained Q-table
 
 
 #VERSION TWO OF TRAINING BLACK JACK WITOUT RENDERING (SO INCREASED SPEED)
-def train_blackjack():
-    """Train Q-learning agent without rendering (for speed)."""
+def train_blackjack(): #This function will run Q-learning for many Blackjack games, also called as episodes
+    #training without rending in the GUI so that its faster
     
-    # Train WITHOUT rendering for speed
-    env = gym.make('Blackjack-v1', natural=False, sab=False, render_mode=None)
-    
+    #Train WITHOUT rendering for speed
+    env = gym.make('Blackjack-v1', natural=False, sab=False, render_mode=None) 
+    #env = gym.make(...) creates the Blackjack environment from Gymnasium.
+
+    #nitialize counters for tracking performance of the agent 
     wins = 0
     losses = 0
     draws = 0
-    epsilon = EPSILON_START
+    epsilon = EPSILON_START #epsilon --> exploration rate, means the probability of taking a random action at the beginning of playing
     
-    print("="*60)
+    print("-------------------------------------------------------------------------")
     print("TRAINING PHASE (No Rendering)")
-    print("="*60)
+    print("------------------------------------------------------------------------")
     print(f"Training for {NUM_TRAINING_EPISODES} episodes...\n")
     
-    for episode in range(1, NUM_TRAINING_EPISODES + 1):
-        state, info = env.reset()
-        terminated = False
-        truncated = False
-        episode_reward = 0
+    #main training loop for each game of black jack, looping from 1 to the number of training episodes
+    for episode in range(1, NUM_TRAINING_EPISODES + 1): #each episode represents one complete game of blackjack
+        state, info = env.reset() #starts a new black jack game, and returns the intial state
+        terminated = False #ddi the game end with a win/loss/bust
+        truncated = False #game ends for a differetn reason
+        episode_reward = 0 #+1, -1, or 0 based on win, loss, draw
     
-    # Play one episode
+        #while the game is not over, keep playing
         while not (terminated or truncated):
-            action = choose_action(state, epsilon)
+            action = choose_action(state, epsilon) #chooses either a random action (for exploration) or uses the best Q value action (exploitation)
+
+            #next state is the new game state after the action
+            #reward, is the immediate reward (usually zero till the game ends)
+            #terminate and truncate are whether the game has ended
             next_state, reward, terminated, truncated, info = env.step(action)
+
+            #This calls the Q-learning update function: Q(s,a)←Q(s,a)+α[r+γa′max​Q(s′,a′)−Q(s,a)]
+            #adjusting an estimate of how good an action is
             update_q(state, action, reward, next_state, terminated or truncated)
-            state = next_state
-            episode_reward += reward
+            state = next_state #next state is set to be current
+            episode_reward += reward 
         
-        # Track results
+        #Track episode rewards
+        #if game has ended, update who has won, lost, or drawed 
         if episode_reward > 0:
             wins += 1
             result = "WIN"
         elif episode_reward < 0:
             losses += 1
             result = "LOSS"
-        else:
+        else: 
             draws += 1
             result = "DRAW"
         
-        # Decay epsilon
+        #Decay epsilon, meaning with each round, explore less and less (less exploring more exploitation)
         epsilon = max(EPSILON_MIN, epsilon * EPSILON_DECAY)
 
-        # Print progress every 1000 episodes
-        if episode % 1000 == 0:
+        #Print progress every 1000 episodes
+        if episode % 1000 == 0: 
             total_games = wins + losses + draws
             win_rate = (wins / total_games) * 100
             print(f"Episode {episode:6d} | {result:4s} | Win Rate: {win_rate:.2f}%")
     
-    env.close()
+    env.close() #shuts down the Blackjack environment.
 
     # Training summary
     total_games = wins + losses + draws
     win_rate = (wins / total_games) * 100
     
-    print("\n" + "="*60)
+    print("\n" + "----------------------------------------------------------------")
     print("TRAINING COMPLETE!")
-    print("="*60)
+    print("-----------------------------------------------------------------------")
     print(f"Total Episodes: {NUM_TRAINING_EPISODES}")
     print(f"Wins:   {wins:6d} ({(wins/total_games)*100:.2f}%)")
     print(f"Losses: {losses:6d} ({(losses/total_games)*100:.2f}%)")
     print(f"Draws:  {draws:6d} ({(draws/total_games)*100:.2f}%)")
     print(f"Final Win Rate: {win_rate:.2f}%")
-    print("="*60 + "\n")
+    print("-----------------------------------------------------------------------" + "\n")
 
 
 # ============================================================
@@ -254,31 +173,36 @@ def train_blackjack():
 # ============================================================
 
 def demonstrate_learned_policy():
-    """Demonstrate learned policy with render_mode='human' as specified."""
+    #demonstrate learned policy render_mode set to human 
     
-    # NOW use render_mode="human" as per instructions
+    #NOW use render_mode="human" as per instructions
     env = gym.make('Blackjack-v1', natural=False, sab=False, render_mode="human")
     
     wins = 0
     losses = 0
     draws = 0
     
-    print("="*60)
+    print("-----------------------------------------------------------------------")
     print("DEMONSTRATION PHASE (With Rendering)")
-    print("="*60)
+    print("-----------------------------------------------------------------------")
     print(f"Playing {NUM_DEMO_EPISODES} episodes with trained policy...")
     print("GUI window will show the game!\n")
     
+    #Loop through demo episodes
     for episode in range(1, NUM_DEMO_EPISODES + 1):
         state, info = env.reset()
         terminated = False
         truncated = False
         episode_reward = 0
 
-        # Play using learned policy (no exploration - pure exploitation)
+        #Play using learned policy (no exploration, only pure exploitation)
         while not (terminated or truncated):
-            # Choose best action according to Q-table
-            action = 0 if Q[state][0] >= Q[state][1] else 1
+            #Choose best action according to Q-table
+            if Q[state][0] >= Q[state][1]:
+                action = 0
+            else:
+                action = 1
+            
             next_state, reward, terminated, truncated, info = env.step(action)
             state = next_state
             episode_reward += reward
@@ -294,22 +218,22 @@ def demonstrate_learned_policy():
             draws += 1
             result = "DRAW"
         
-        # Print each episode result
+        #Print each episode result
         total_games = wins + losses + draws
         win_rate = (wins / total_games) * 100
         print(f"Episode {episode}: {result} | Win Rate: {win_rate:.2f}%")
     
     env.close()
 
-    print("\n" + "="*60)
+    print("\n" + "----------------------------------------------------------------")
     print("DEMONSTRATION COMPLETE!")
-    print("="*60)
+    print("----------------------------------------------------------------")
     print(f"Demo Episodes: {NUM_DEMO_EPISODES}")
     print(f"Wins:   {wins} ({(wins/NUM_DEMO_EPISODES)*100:.2f}%)")
     print(f"Losses: {losses} ({(losses/NUM_DEMO_EPISODES)*100:.2f}%)")
     print(f"Draws:  {draws} ({(draws/NUM_DEMO_EPISODES)*100:.2f}%)")
     print(f"Win Rate: {win_rate:.2f}%")
-    print("="*60)
+    print("----------------------------------------------------------------")
 
 
 
@@ -371,5 +295,3 @@ if __name__ == "__main__":
     demonstrate_learned_policy()
 
 
-
-###YOUR Q-LEARNING CODE ENDS

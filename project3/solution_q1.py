@@ -242,40 +242,40 @@ def demonstrate_learned_policy():
 # ============================================================
 # OPTIONAL: TEST TRAINED AGENT
 # ============================================================
-def test_agent(Q_table, num_test_episodes=1000):
-    """
-    Test the trained agent without exploration (pure exploitation).
-    """
-    env = gym.make('Blackjack-v1', natural=False, sab=False, render_mode=None)
+# def test_agent(Q_table, num_test_episodes=1000):
+#     """
+#     Test the trained agent without exploration (pure exploitation).
+#     """
+#     env = gym.make('Blackjack-v1', natural=False, sab=False, render_mode=None)
     
-    wins = 0
-    losses = 0
-    draws = 0
+#     wins = 0
+#     losses = 0
+#     draws = 0
     
-    print(f"\nTesting trained agent for {num_test_episodes} episodes...")
+#     print(f"\nTesting trained agent for {num_test_episodes} episodes...")
     
-    for episode in range(num_test_episodes):
-        state, info = env.reset()
-        terminated = False
-        truncated = False
+#     for episode in range(num_test_episodes):
+#         state, info = env.reset()
+#         terminated = False
+#         truncated = False
         
-        while not (terminated or truncated):
-            # Always choose best action (no exploration)
-            action = 0 if Q_table[state][0] >= Q_table[state][1] else 1
-            state, reward, terminated, truncated, info = env.step(action)
+#         while not (terminated or truncated):
+#             # Always choose best action (no exploration)
+#             action = 0 if Q_table[state][0] >= Q_table[state][1] else 1
+#             state, reward, terminated, truncated, info = env.step(action)
         
-        if reward > 0:
-            wins += 1
-        elif reward < 0:
-            losses += 1
-        else:
-            draws += 1
+#         if reward > 0:
+#             wins += 1
+#         elif reward < 0:
+#             losses += 1
+#         else:
+#             draws += 1
     
-    env.close()
+#     env.close()
 
-    test_win_rate = (wins / num_test_episodes) * 100
-    print(f"Test Results: W/L/D = {wins}/{losses}/{draws}")
-    print(f"Test Win Rate: {test_win_rate:.2f}%\n")
+#     test_win_rate = (wins / num_test_episodes) * 100
+#     print(f"Test Results: W/L/D = {wins}/{losses}/{draws}")
+#     print(f"Test Win Rate: {test_win_rate:.2f}%\n")
 
 
 

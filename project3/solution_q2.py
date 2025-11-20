@@ -3,13 +3,17 @@ import numpy as np
 from collections import defaultdict
 
 # Hyperparameters
-NUM_EPISODES = 1000
-GAMMA = 0.99  # Discount factor
-THETA = 1e-8  # Convergence threshold for value iteration
+NUM_EPISODES = 1000 #number of random exploration episodes
+NUM_TEST_EPISODES = 100  #Number of episodes to test optimal policy
+GAMMA = 0.99  #Discount factor
+THETA = 1e-8  #Convergence threshold for value iteration
+
+NUM_STATES = 16 #4x4 grid = 16 states
+NUM_ACTIONS = 4  #can either move left, right, up, or down
 
 # Step 1: Initialize environment
-env = gym.make('FrozenLake-v1', desc=None, map_name="4x4", 
-               is_slippery=True, render_mode=None)
+# env = gym.make('FrozenLake-v1', desc=None, map_name="4x4", 
+#                is_slippery=True, render_mode=None)
 
 # Step 2: Random exploration (Q2.2)
 # Step 3: Learn MDP model (Q2.2)
@@ -194,6 +198,81 @@ def extract_policy(V, T, R, num_states, num_actions, gamma=0.99):
     
     print("Policy extraction complete!\n")
     return policy
+
+
+
+
+def execute_optimal_policy(policy, num_test_episodes=100):
+    """
+    Execute the learned optimal policy with GUI rendering.
+    
+    Args:
+        policy: optimal policy array
+        num_test_episodes: number of episodes to run
+    """
+    #Create NEW environment with rendering
+    env_test = gym.make('FrozenLake-v1', desc=None, map_name="4x4", 
+                        is_slippery=True, render_mode="human")
+    
+    wins = 0 #number of episodes where the agent reached the goal state
+    total_reward = 0 #total reward combined across all episodes
+    
+    print("---------------------------------------------------------")
+    print("EXECUTING OPTIMAL POLICY (With Rendering)")
+    print("---------------------------------------------------------")
+    print(f"Running {num_test_episodes} episodes with learned policy...\n")
+    
+    #running multiple test episodes
+    for episode in range(num_test_episodes):
+        state, info = env_test.reset() #make sure the state index is an integer
+        state = int(state)
+        terminated = False
+        truncated = False
+        episode_reward = 0
+        steps = 0
+        
+        #loop through policu until it is terminated --> either a goal, hole, or timeout has happened 
+        while not (terminated or truncated):
+            #Use learned policy (NOT random!, so this is NOT exploration, only exploitaton
+            action = policy[state]
+            
+            #Take action in environment
+            next_state, reward, terminated, truncated, info = env_test.step(action)
+            next_state = int(next_state)
+            
+            episode_reward += reward #add on rewards and keep going
+            state = next_state
+            steps += 1
+        
+        #epsiode is finished, so we go and track results
+        total_reward += episode_reward
+        if episode_reward > 0:
+            wins += 1 #reward=1 means reached goal
+        
+        if episode_reward > 0:
+            result =  "WIN"
+        else:
+            result = "LOSS"
+        
+        print(f"Episode {episode + 1}: {result} | Steps: {steps} | Reward: {episode_reward}")
+    
+    env_test.close()
+    
+    # Print summary
+    win_rate = (wins / num_test_episodes) * 100
+    avg_reward = total_reward / num_test_episodes
+    
+    print("\n" + "---------------------------------------------------------")
+    print("RESULTS")
+    print("---------------------------------------------------------")
+    print(f"Episodes: {num_test_episodes}")
+    print(f"Wins: {wins}")
+    print(f"Win Rate: {win_rate:.2f}%")
+    print(f"Average Reward: {avg_reward:.3f}")
+    print("---------------------------------------------------------")
+
+
+
 
 
 if __name__ == "__main__":

@@ -91,11 +91,90 @@ def estimate_mdp_model(transitions, num_states, num_actions):
     T = np.zeros((num_states, num_actions, num_states)) #T[s,a,s']--> probability of transitioning to s'
     R = np.zeros((num_states, num_actions, num_states)) #R[s,a,s'] --> expected reward of going to state s' after going from state s and taking action a
     
-    # Compute T(s,a,s') = count(s,a,s') / count(s,a)
-    # Compute R(s,a,s') = sum_reward(s,a,s') / count(s,a,s')
+    #Compute T(s,a,s') = count(s,a,s') / count(s,a)
+    #Compute R(s,a,s') = sum_reward(s,a,s') / count(s,a,s')
     for (s, a, s_next), count in count_sa_s.items():
         T[s, a, s_next] = count / count_sa[(s, a)]
         R[s, a, s_next] = sum_reward[(s, a, s_next)] / count
     
     print("MDP model estimation complete!\n")
     return T, R
+
+
+def value_iteration(T, R, num_states, num_actions, gamma=0.99, theta=1e-8):
+    """
+    Perform value iteration to find optimal value function.
+    
+    Bellman optimality equation:
+    V(s) = max_a Σ_{s'} T(s,a,s') [R(s,a,s') + γ·V(s')]
+    
+    Args:
+        T: transition probabilities [num_states, num_actions, num_states]
+        R: rewards [num_states, num_actions, num_states]
+        gamma: discount factor
+        theta: convergence threshold
+    
+    Returns:
+        V: optimal value function [num_states]
+    """
+    #Initialize all state valyes to zero
+    V = np.zeros(num_states)
+    
+    print("Running Value Iteration...")
+    iteration = 0
+    
+    #main value iteration will continue until V(s) stops changing significantly
+    while True:
+        delta = 0  #Tracks the maximum change in value function across states
+        
+        #Update each state's value
+        for s in range(num_states):
+            v_old = V[s] #store the old value so that you can find the change 
+            
+            # Compute value for each action
+            action_values = [] #create a list to store the Q(s,a) for each action a
+            for a in range(num_actions):
+                # Q(s,a) = Σ_{s'} T(s,a,s') [R(s,a,s') + γ·V(s')]
+                q_value = np.sum(T[s, a, :] * (R[s, a, :] + gamma * V)) #(R + gamma * V) is a vector over all next states s'
+                action_values.append(q_value)
+            
+            #V(s) = max_a Q(s,a)
+            #choose the action that gives the max Q value
+            V[s] = max(action_values)
+            
+            #Update delta to measure the largest value change
+            delta = max(delta, abs(v_old - V[s]))
+        
+        iteration += 1
+        
+        #Convergence check — if improvement is tiny, we stop
+        if delta < theta:
+            print(f"Value Iteration converged after {iteration} iterations\n")
+            break
+        #Print debugging info every 10 iterations
+        if iteration % 10 == 0:
+            print(f"  Iteration {iteration}: delta = {delta:.6f}")
+    
+    return V
+
+
+if __name__ == "__main__":
+    # Initialize environment (without rendering for training)
+    env = gym.make('FrozenLake-v1', desc=None, map_name="4x4", 
+                   is_slippery=True, render_mode=None)
+    
+    # Q2.2: Collect data and learn MDP model
+    transitions = collect_random_exploration_data(env, NUM_EPISODES)
+    T, R = estimate_mdp_model(transitions, NUM_STATES, NUM_ACTIONS)
+    
+    # Q2.3: Value Iteration
+    V = value_iteration(T, R, NUM_STATES, NUM_ACTIONS, GAMMA, THETA)
+    
+    # Q2.4: Policy Extraction
+    policy = extract_policy(V, T, R, NUM_STATES, NUM_ACTIONS, GAMMA)
+    
+    # Close training environment
+    env.close()
+    
+    # Q2.5: Execute optimal policy with rendering
+    execute_optimal_policy(policy, NUM_TEST_EPISODES)

@@ -44,13 +44,58 @@ def collect_random_exploration_data(env, num_episodes):
             next_state = int(next_state) #convert the next_stat to an integer
             
             #Store transition and record it 
+            #(s, a, s', r). this will help for calcaulting the transition probability and 
             transitions.append((state, action, next_state, reward))
             
-            # Move to next state
+            #Move to next state
             state = next_state
         
+        #printing progress
         if (episode + 1) % 100 == 0:
             print(f"  Completed {episode + 1}/{num_episodes} episodes")
     
     print(f"Collected {len(transitions)} transitions\n")
     return transitions
+
+
+#calculates the MDP model values
+def estimate_mdp_model(transitions, num_states, num_actions):
+    """
+    Estimate the probabilities of a certain transition ocurring, and the rewards that result from it
+    
+    Arguments: 
+        transitions: list of (state, action, next_state, reward)
+        num_states: number of states (16 for 4x4 grid)
+        num_actions: number of actions (4)
+    
+    Returns:
+        T: transition probabilities [num_states, num_actions, num_states]
+        R: rewards [num_states, num_actions, num_states]
+    """
+    #Count the number of transitons, so the probabiltity fo a certain transition ocurring
+    count_sa_s = defaultdict(int)  #count[(s, a, s')] counts how many times we observed this exact transition
+    count_sa = defaultdict(int) #count[(s, a)] counts how many total times we took action a in state s
+    
+    #The total rewards you get from a specific transiio
+    sum_reward = defaultdict(float)  # sum[(s, a, s')] = total reward
+    
+    print("Estimating MDP model from transitions...")
+    
+    #iterating through all of the different transitions 
+    for (s, a, s_next, r) in transitions:
+        count_sa_s[(s, a, s_next)] += 1 #increment the s,a,s' transition count
+        count_sa[(s, a)] += 1 #increment the s,a count
+        sum_reward[(s, a, s_next)] += r #add the reward to the total 
+    
+    #Initialize T and R arrays, creating empty matrices 
+    T = np.zeros((num_states, num_actions, num_states)) #T[s,a,s']--> probability of transitioning to s'
+    R = np.zeros((num_states, num_actions, num_states)) #R[s,a,s'] --> expected reward of going to state s' after going from state s and taking action a
+    
+    # Compute T(s,a,s') = count(s,a,s') / count(s,a)
+    # Compute R(s,a,s') = sum_reward(s,a,s') / count(s,a,s')
+    for (s, a, s_next), count in count_sa_s.items():
+        T[s, a, s_next] = count / count_sa[(s, a)]
+        R[s, a, s_next] = sum_reward[(s, a, s_next)] / count
+    
+    print("MDP model estimation complete!\n")
+    return T, R

@@ -158,6 +158,44 @@ def value_iteration(T, R, num_states, num_actions, gamma=0.99, theta=1e-8):
     return V
 
 
+def extract_policy(V, T, R, num_states, num_actions, gamma=0.99):
+    """
+    Extract optimal policy from value function.
+    
+    Formula Used: π*(s) = argmax_a Σ_{s'} T(s,a,s') [R(s,a,s') + γ·V(s')]
+    
+    Arguments:
+        V: optimal value function
+        T: transition probabilities
+        R: rewards
+        num_states -> number of states (16 for the frozen lake)
+        num_action -> number of actions which can be taken which is 4
+    
+    Returns:
+        policy: array of length num_states where policy[s] = best action to take in state s
+    """
+
+    #initialize the policy, one action is given per state
+    policy = np.zeros(num_states, dtype=int)
+    
+    print("Extracting optimal policy...")
+    
+    for s in range(num_states): #loop through all the states to choose the best action in each 
+        action_values = [] #stores the Q(s,a) value for each action
+        
+        #Compute Q(s,a) for every possible action a
+        for a in range(num_actions):
+            # Q(s,a) = Σ_{s'} T(s,a,s') [R(s,a,s') + γ·V(s')]
+            q_value = np.sum(T[s, a, :] * (R[s, a, :] + gamma * V))
+            action_values.append(q_value)
+        
+        #Choose action with highest Q-value
+        policy[s] = np.argmax(action_values)
+    
+    print("Policy extraction complete!\n")
+    return policy
+
+
 if __name__ == "__main__":
     # Initialize environment (without rendering for training)
     env = gym.make('FrozenLake-v1', desc=None, map_name="4x4", 

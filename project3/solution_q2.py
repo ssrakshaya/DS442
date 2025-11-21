@@ -80,7 +80,7 @@ def estimate_mdp_model(transitions, num_states, num_actions):
     count_sa_s = defaultdict(int)  #count[(s, a, s')] counts how many times we observed this exact transition
     count_sa = defaultdict(int) #count[(s, a)] counts how many total times we took action a in state s
     
-    #The total rewards you get from a specific transiio
+    #The total rewards you get from a specific transition
     sum_reward = defaultdict(float)  # sum[(s, a, s')] = total reward
     
     print("Estimating MDP model from transitions...")

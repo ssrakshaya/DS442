@@ -192,6 +192,26 @@ def sum_out_variable(factor, variable):
     return Factor(new_variables, new_probabilities)
 
 
+def normalize_factor(factor):
+    """
+    normalize a factor so probabilities sum to 1
+    returns a new normalized factor
+    """
+
+    total = sum(factor.probabilities.values())
+    
+    if total == 0:
+        return factor
+    
+    new_probabilities = {
+        assignment: prob/total
+        for assignment, prob in factor.probabilities.items()
+    }
+
+    return Factor(factor.variables, new_probabilities)
+
+
+
 def main():
     """
     Main function used to compute P(Burglary | John Calls = +j)

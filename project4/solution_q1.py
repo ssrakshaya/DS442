@@ -28,10 +28,10 @@ def create_alarm_network_factors():
     """
 
     #P(B) = prior probability of burglary
-    factor_b = Factor(['B'], {'+b': 0.001, '-b': 0.999})
+    factor_b = Factor(['B'], {('+b',): 0.001, ('-b',): 0.999})
 
     #P(E) = prior probability of earthquake
-    factor_e = Factor(['E'], {'+e': 0.002, '-e': 0.998})
+    factor_e = Factor(['E'], {('+e',): 0.002, ('-e',): 0.998})
 
     #P(A | B, E) = condional probability of alarm given burglary and earthquake
     factor_a = Factor(
@@ -155,6 +155,8 @@ def multiply_factors(factor1, factor2):
             new_probabilities[assignment_tuple] = (
                 factor1.probabilities[f1_assignment] * factor2.probabilities[f2_assignment]
             )
+
+    return Factor(all_vars, new_probabilities)
 
 
 def sum_out_variable(factor, variable):

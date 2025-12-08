@@ -157,6 +157,40 @@ def multiply_factors(factor1, factor2):
             )
 
 
+def sum_out_variable(factor, variable):
+    """
+    sum out (marginalize) a variable from a factor
+    It returns a new factor without that variable
+    """
+
+    if variable not in factor.variables:
+        return factor
+    
+    var_index = factor.variables.index(variable)
+    new_variables = []
+    for v in factor.variables:
+        if v != variable:
+            new_variables.append(v)
+    
+    #grouping probabilities by assignments to other variables
+    new_probabilities = {}
+
+    for assignment, prob in factor.probabilities.items():
+        #creae assignment without the summer out variable
+        new_assignment_list = []
+        for i in range(len(assignment)):
+            if i != var_index:
+                new_assignment_list.append(assignment[i])
+        new_assignment = tuple(new_assignment_list)
+
+
+        if new_assignment in new_probabilities:
+            new_probabilities[new_assignment] += prob
+        else:
+            new_probabilities[new_assignment] = prob
+    
+    return Factor(new_variables, new_probabilities)
+
 
 def main():
     """

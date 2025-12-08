@@ -211,6 +211,63 @@ def normalize_factor(factor):
     return Factor(factor.variables, new_probabilities)
 
 
+def variable_elimination(factors, query_var, evidence, elimination_order):
+    """
+    Perform variable elimination algorithm
+    
+    factors: list of Factor objects
+    query_var: variable to query (e.g., 'B')
+    evidence: dict of variable -> value (e.g., {'J': '+j'})
+    elimination_order: list of variables to eliminate in order
+    
+    Returns: normalized Factor for the query variable
+    """
+
+    # Step 1: Restrict factors with evidence
+    restricted_factors = []
+    for factor in factors:
+        restricted_factor = factor
+        for var, val in evidence.items():
+            restricted_factor = restrict_factor(restricted_factor, var, val)
+        restricted_factors.append(restricted_factor)
+    
+    # Step 2: Eliminate variables one by one
+    current_factors = restricted_factors
+
+    for var_to_eliminate in elimination_order:
+        # Find all factors that mention this variable
+        factors_with_var = [f for f in current_factors if var_to_eliminate in f.variables]
+        factors_without_var = [f for f in current_factors if var_to_eliminate not in f.variables]
+        
+        # Multiply all factors containing the variable
+        if len(factors_with_var) > 0:
+            product_factor = factors_with_var[0]
+            for f in factors_with_var[1:]:
+                product_factor = multiply_factors(product_factor, f)
+            
+            # Sum out the variable
+            summed_factor = sum_out_variable(product_factor, var_to_eliminate)
+            
+            # Update factor list
+            current_factors = factors_without_var + [summed_factor]
+        else:
+            current_factors = factors_without_var
+    
+    
+    # Step 3: Multiply remaining factors
+    if len(current_factors) == 0:
+        return None
+    
+    result_factor = current_factors[0]
+    for f in current_factors[1:]:
+        result_factor = multiply_factors(result_factor, f)
+    
+    # Step 4: Normalize
+    result_factor = normalize_factor(result_factor)
+    
+    return result_factor
+
+
 
 def main():
     """

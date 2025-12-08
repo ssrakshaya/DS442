@@ -156,10 +156,41 @@ def multiply_factors(factor1, factor2):
                 factor1.probabilities[f1_assignment] * factor2.probabilities[f2_assignment]
             )
 
+
+
 def main():
     """
     Main function used to compute P(Burglary | John Calls = +j)
     """
+
+    # Create all factors for the Alarm network
+    factors = create_alarm_network_factors()
+    
+    # Define the query: P(B | J = +j)
+    query_variable = 'B'
+    evidence = {'J': '+j'}
+    
+    # Define elimination order: eliminate E, A, M (not B or J)
+    elimination_order = ['E', 'A', 'M']
+    
+    # Perform variable elimination
+    result = variable_elimination(factors, query_variable, evidence, elimination_order)
+    
+    # Print the result
+    print("P(Burglary | John Calls = +j):")
+    print("=" * 40)
+    
+    # Sort by variable values for consistent output
+    sorted_items = sorted(result.probabilities.items(), key=lambda x: x[0])
+    
+    for assignment, probability in sorted_items:
+        var_value = assignment[0]
+        if var_value == '+b':
+            print(f"P(B = +b | J = +j) = {probability:.6f}")
+        else:
+            print(f"P(B = -b | J = +j) = {probability:.6f}")
+    
+    print("=" * 40)
 
 if __name__ == "__main__":
     main()

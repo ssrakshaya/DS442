@@ -3,6 +3,34 @@ import numpy as np
 from collections import defaultdict
 
 
+def load_dataset(filepath='Naive-Bayes-Classification-Data.csv'):
+
+    """
+    Load in the diabetes dataset from the CSV file
+    Arguments: filepath - path to the csv file
+    Returns: a datafram with the dataset
+    """
+
+    data = pd.read_csv(filepath)
+    #Rename columns to match format of X1, X2, and Y
+    data.columns = ['X1', 'X2', 'Y']
+    return data
+
+
+def stratified_split(data, test_ratio = 0.3, random_seed = 42):
+    """
+    Performing stratified split to make sure the training and testing sets are good sizes (70/30 split in this case)
+    
+    Arguments: 
+    - data (which is hthe csv)
+    - test_ratio - so 0.3 or 30% of the dataset is used for testing, while 70% fo training. 
+    - random seed is a random value for reproducibility of the split
+
+    returns:
+    - train_data, test_data - which are the two dataframes with training and testing data
+    """
+
+
 
 def main():
     """

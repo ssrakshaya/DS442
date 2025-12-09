@@ -34,49 +34,111 @@ def stratified_split(data, test_ratio = 0.3, random_seed = 42):
 
 
     #VERSION UTILIZING SKLEARN
+    #Separate features and target
     X = data[['X1', 'X2']]
     y = data['Y']
 
-    X_train, X_test, y_train, y_test = test_train_split(X, y, test_size = test_ratio, stratify=y, random_state =random_seed)
+    #Use sklearn's train_test_split with stratification
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_ratio, stratify=y, random_state =random_seed)
 
-    train_data = pd.concat([X_train, y_train], axis = 1)
-    test_data = pd.concat([X_test, y_test], axis = 1)
+    #Recombine features and target into DataFrames
+    train_data = pd.concat([X_train, y_train], axis = 1).reset_index(drop=True)
+    test_data = pd.concat([X_test, y_test], axis = 1).reset_index(drop=True)
 
     return train_data, test_data
 
 
+    # #VERSION WITHOUT SK LEARN
+    # np.random.seed(random_seed)
+    
+    # #Separate data by class
+    # class_0 = data[data['Y'] == 0].copy()
+    # class_1 = data[data['Y'] == 1].copy()
+    
+    # #Shuffle each class
+    # class_0 = class_0.sample(frac=1, random_state=random_seed).reset_index(drop=True)
+    # class_1 = class_1.sample(frac=1, random_state=random_seed).reset_index(drop=True)
+    
+    # #Calculate split indices
+    # test_size_0 = int(len(class_0) * test_ratio)
+    # test_size_1 = int(len(class_1) * test_ratio)
+    
+    # #Split each class
+    # test_0 = class_0[:test_size_0]
+    # train_0 = class_0[test_size_0:]
+    
+    # test_1 = class_1[:test_size_1]
+    # train_1 = class_1[test_size_1:]
+    
+    # #Combine train and test sets
+    # train_data = pd.concat([train_0, train_1], ignore_index=True)
+    # test_data = pd.concat([test_0, test_1], ignore_index=True)
+    
+    # #Shuffle the combined sets
+    # train_data = train_data.sample(frac=1, random_state=random_seed).reset_index(drop=True)
+    # test_data = test_data.sample(frac=1, random_state=random_seed).reset_index(drop=True)
+    
+    # return train_data, test_data
 
-    #VERSION WITHOUT SK LEARN
-    np.random.seed(random_seed)
+def compute_prior_Y(train):
+    """
+    Computing the prior probabilities P(Y) for each class
+    Arguments: train - training datafram
+    returns - dictionary with P(Y=0) and P(Y=1)
+    """
+
+    total = len(train) #total training examples
+    count_y1 = len(train[train['Y'] == 1]) #count how many trainign rows ahve Y=1
+    count_y0 = len(train[train['Y'] == 0]) #cont how many have Y=0
     
-    # Separate data by class
-    class_0 = data[data['Y'] == 0].copy()
-    class_1 = data[data['Y'] == 1].copy()
+
+    #Compute prior probabilities:
+    #P(Y=0) = (# of rows where Y=0) / total rows
+    #P(Y=1) = (# of rows where Y=1) / total rows
+    priors = {
+        0: count_y0 / total,
+        1: count_y1 / total
+    }
+
+    return priors #dictionary with the two prior values
+
+
+def compute_cpt(train, feature_column, target_column = "Y"):
+    """
+    compute the conditional probability table P(Feature | Y) with smoothing
+    Arguments:
+    - train - trainign dataframe
+    - feature_column  name of the feature column, either X1 or X2
+    - target_column - > name of the target column, Y1
+
+    returns: nested dictionary which is the conditional probability table 
+    - cpt[y][feature_value] = probability
+    """
+
+    cpt = defaultdict(lambda: defaultdict(float))
     
-    # Shuffle each class
-    class_0 = class_0.sample(frac=1, random_state=random_seed).reset_index(drop=True)
-    class_1 = class_1.sample(frac=1, random_state=random_seed).reset_index(drop=True)
+    #Get all unique feature values in training data
+    unique_features = train[feature_column].unique()
+    num_unique_features = len(unique_features)
+
+    #Find the conditional probability table for each class
+    for y in [0, 1]:
+        #filter the training rows where Y=y
+        data_y = train[train[target_column]].unique()
+        total_count_y = len(data_y) #number of rows where Y=y
+
+        #count the numbr of times each feature appears given Y=y
+        feature_counts = data_y[feature_column].value_counts().to_dict()
+
+        #use laplace smoothing: P(X=x | Y=y) = (count(X=x, Y=y) + 1) / (count(Y=y) + |unique X values|)
+        #laplace s used to to avoid zero probabilties which break 
+        for feature_value in unique_features:
+            count = feature_counts.get(feature_value, 0)  #0 if feature never appears with Y=y
+            cpt[y][feature_value] = (count + 1) / (total_count_y + num_unique_features)
     
-    # Calculate split indices
-    test_size_0 = int(len(class_0) * test_ratio)
-    test_size_1 = int(len(class_1) * test_ratio)
-    
-    # Split each class
-    test_0 = class_0[:test_size_0]
-    train_0 = class_0[test_size_0:]
-    
-    test_1 = class_1[:test_size_1]
-    train_1 = class_1[test_size_1:]
-    
-    # Combine train and test sets
-    train_data = pd.concat([train_0, train_1], ignore_index=True)
-    test_data = pd.concat([test_0, test_1], ignore_index=True)
-    
-    # Shuffle the combined sets
-    train_data = train_data.sample(frac=1, random_state=random_seed).reset_index(drop=True)
-    test_data = test_data.sample(frac=1, random_state=random_seed).reset_index(drop=True)
-    
-    return train_data, test_data
+    return cpt
+
+
 
 
 

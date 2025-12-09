@@ -1,429 +1,336 @@
-"""
-DS/CMPSC 442 Project-4, Question-2
-Implementing a Prediction Model for Diabetes Diagnosis
-
-Author: Original implementation
-Date: Fall 2025
-
-This implementation uses only Python 3.9 built-in functions and the csv module.
-No external ML libraries are used.
-"""
-
-import csv
-import random
+import pandas as pd
+import numpy as np
 from collections import defaultdict
-
-# Set random seed for reproducibility
-random.seed(42)
+from sklearn.model_selection import train_test_split
 
 
-def load_data(filename):
+def load_dataset(filepath='Naive-Bayes-Classification-Data.csv'):
+
     """
-    Load the dataset from CSV file.
-    
-    Args:
-        filename (str): Path to the CSV file
-        
-    Returns:
-        list: List of tuples (X1, X2, Y) where all values are integers
+    Load in the diabetes dataset from the CSV file
+    Arguments: filepath - path to the csv file
+    Returns: a datafram with the dataset
     """
-    data = []
-    with open(filename, 'r') as f:
-        reader = csv.reader(f)
-        header = next(reader)  # Skip header row
-        for row in reader:
-            x1 = int(float(row[0]))  # Glucose level (X1)
-            x2 = int(float(row[1]))  # Blood pressure level (X2)
-            y = int(row[2])           # Diabetes label (Y: 0 or 1)
-            data.append((x1, x2, y))
+
+    data = pd.read_csv(filepath)
+    #Rename columns to match format of X1, X2, and Y
+    data.columns = ['X1', 'X2', 'Y']
     return data
 
 
-def stratified_split(data, train_ratio=0.7):
+def stratified_split(data, test_ratio = 0.3, random_seed = 42):
     """
-    Perform stratified train-test split to preserve class ratios.
-    This ensures proportions of Y=0 and Y=1 are maintained in both subsets.
+    Performing stratified split to make sure the training and testing sets are good sizes (70/30 split in this case)
     
-    Args:
-        data (list): List of data points (X1, X2, Y)
-        train_ratio (float): Ratio of training data (default 0.7 for 70%)
-        
-    Returns:
-        tuple: (train_data, test_data)
+    Arguments: 
+    - data (which is hthe csv)
+    - test_ratio - so 0.3 or 30% of the dataset is used for testing, while 70% fo training. 
+    - random seed is a random value for reproducibility of the split
+
+    returns:
+    - train_data, test_data - which are the two dataframes with training and testing data
     """
-    # Separate data by class
-    class_0 = [d for d in data if d[2] == 0]
-    class_1 = [d for d in data if d[2] == 1]
-    
-    # Shuffle each class independently
-    random.shuffle(class_0)
-    random.shuffle(class_1)
-    
-    # Calculate split points
-    train_size_0 = int(len(class_0) * train_ratio)
-    train_size_1 = int(len(class_1) * train_ratio)
-    
-    # Split each class
-    train_data = class_0[:train_size_0] + class_1[:train_size_1]
-    test_data = class_0[train_size_0:] + class_1[train_size_1:]
-    
-    # Shuffle the combined datasets
-    random.shuffle(train_data)
-    random.shuffle(test_data)
-    
+
+
+    #VERSION UTILIZING SKLEARN
+    #Separate features and target
+    X = data[['X1', 'X2']]
+    y = data['Y']
+
+    #Use sklearn's train_test_split with stratification
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_ratio, stratify=y, random_state =random_seed)
+
+    #Recombine features and target into DataFrames
+    train_data = pd.concat([X_train, y_train], axis = 1).reset_index(drop=True)
+    test_data = pd.concat([X_test, y_test], axis = 1).reset_index(drop=True)
+
     return train_data, test_data
 
 
-def compute_prior(train_data):
-    """
-    Compute P(Y) - prior probabilities of each class.
+    # #VERSION WITHOUT SK LEARN
+    # np.random.seed(random_seed)
     
-    This calculates:
-    - P(Y=0): probability of no diabetes
-    - P(Y=1): probability of diabetes
+    # #Separate data by class
+    # class_0 = data[data['Y'] == 0].copy()
+    # class_1 = data[data['Y'] == 1].copy()
     
-    Args:
-        train_data (list): Training dataset
-        
-    Returns:
-        dict: {0: P(Y=0), 1: P(Y=1)}
-    """
-    counts = {0: 0, 1: 0}
-    for _, _, y in train_data:
-        counts[y] += 1
+    # #Shuffle each class
+    # class_0 = class_0.sample(frac=1, random_state=random_seed).reset_index(drop=True)
+    # class_1 = class_1.sample(frac=1, random_state=random_seed).reset_index(drop=True)
     
-    total = len(train_data)
-    prior = {y: counts[y] / total for y in counts}
+    # #Calculate split indices
+    # test_size_0 = int(len(class_0) * test_ratio)
+    # test_size_1 = int(len(class_1) * test_ratio)
     
-    return prior
+    # #Split each class
+    # test_0 = class_0[:test_size_0]
+    # train_0 = class_0[test_size_0:]
+    
+    # test_1 = class_1[:test_size_1]
+    # train_1 = class_1[test_size_1:]
+    
+    # #Combine train and test sets
+    # train_data = pd.concat([train_0, train_1], ignore_index=True)
+    # test_data = pd.concat([test_0, test_1], ignore_index=True)
+    
+    # #Shuffle the combined sets
+    # train_data = train_data.sample(frac=1, random_state=random_seed).reset_index(drop=True)
+    # test_data = test_data.sample(frac=1, random_state=random_seed).reset_index(drop=True)
+    
+    # return train_data, test_data
 
+def compute_prior_Y(train):
+    """
+    Computing the prior probabilities P(Y) for each class
+    Arguments: train - training datafram
+    returns - dictionary with P(Y=0) and P(Y=1)
+    """
 
-def compute_conditional_prob(train_data, feature_index):
-    """
-    Compute P(Xi | Y) for a given feature using Laplace smoothing.
+    total = len(train) #total training examples
+    count_y1 = len(train[train['Y'] == 1]) #count how many trainign rows ahve Y=1
+    count_y0 = len(train[train['Y'] == 0]) #cont how many have Y=0
     
-    This calculates the conditional probability of each feature value
-    given the class label Y.
-    
-    Args:
-        train_data (list): Training dataset
-        feature_index (int): 0 for X1 (glucose), 1 for X2 (blood pressure)
-        
-    Returns:
-        dict: Nested dictionary {y: {feature_value: probability}}
-    """
-    # Count occurrences of (feature_value, y)
-    counts = defaultdict(lambda: defaultdict(int))
-    class_counts = {0: 0, 1: 0}
-    feature_values = set()
-    
-    for row in train_data:
-        feature_value = row[feature_index]
-        y = row[2]
-        counts[y][feature_value] += 1
-        class_counts[y] += 1
-        feature_values.add(feature_value)
-    
-    # Apply Laplace smoothing (add-one smoothing) to handle zero probabilities
-    # Formula: P(X=x|Y=y) = (count(X=x, Y=y) + 1) / (count(Y=y) + |X|)
-    # where |X| is the number of unique values of X
-    num_unique_values = len(feature_values)
-    cond_prob = defaultdict(dict)
-    
-    for y in [0, 1]:
-        for feature_value in feature_values:
-            numerator = counts[y][feature_value] + 1
-            denominator = class_counts[y] + num_unique_values
-            cond_prob[y][feature_value] = numerator / denominator
-    
-    # Store smoothing factor for unseen values during testing
-    cond_prob['_smoothing_'] = {
-        0: 1 / (class_counts[0] + num_unique_values),
-        1: 1 / (class_counts[1] + num_unique_values)
+
+    #Compute prior probabilities:
+    #P(Y=0) = (# of rows where Y=0) / total rows
+    #P(Y=1) = (# of rows where Y=1) / total rows
+    priors = {
+        0: count_y0 / total,
+        1: count_y1 / total
     }
-    
-    return cond_prob
+
+    return priors #dictionary with the two prior values
 
 
-def get_probability(cond_prob, y, feature_value):
+def compute_cpt(train, feature_column, target_column = "Y"):
     """
-    Get conditional probability with fallback for unseen values.
-    
-    If a feature value wasn't seen during training, use the
-    Laplace smoothing probability.
-    
-    Args:
-        cond_prob (dict): Conditional probability table
-        y (int): Class label (0 or 1)
-        feature_value: Feature value to look up
-        
-    Returns:
-        float: Probability P(feature_value | Y=y)
-    """
-    if feature_value in cond_prob[y]:
-        return cond_prob[y][feature_value]
-    else:
-        # Use smoothed probability for unseen values
-        return cond_prob['_smoothing_'][y]
+    compute the conditional probability table P(Feature | Y) with smoothing
+    Arguments:
+    - train - trainign dataframe
+    - feature_column  name of the feature column, either X1 or X2
+    - target_column - > name of the target column, Y1
 
+    returns: nested dictionary which is the conditional probability table 
+    - cpt[y][feature_value] = probability
+    """
 
-def inference(x1, x2, prior, cond_x1, cond_x2):
-    """
-    Compute P(Y | X1=x1, X2=x2) using inference by enumeration.
+    cpt = defaultdict(lambda: defaultdict(float))
     
-    Based on the conditional independence assumption:
-    P(X1, X2, Y) = P(Y) * P(X1 | Y) * P(X2 | Y)
-    
-    We compute:
-    P(Y | X1, X2) = P(Y) * P(X1 | Y) * P(X2 | Y) / P(X1, X2)
-    
-    Where normalization ensures: P(Y=0|X1,X2) + P(Y=1|X1,X2) = 1
-    
-    Args:
-        x1: Glucose level value
-        x2: Blood pressure level value
-        prior (dict): P(Y)
-        cond_x1 (dict): P(X1 | Y)
-        cond_x2 (dict): P(X2 | Y)
-        
-    Returns:
-        dict: {0: P(Y=0|X1,X2), 1: P(Y=1|X1,X2)}
-    """
-    # Compute unnormalized joint probabilities for each value of Y
-    unnormalized = {}
+    #Get all unique feature values in training data
+    unique_features = train[feature_column].unique()
+    num_unique_features = len(unique_features)
+
+    #Find the conditional probability table for each class
     for y in [0, 1]:
-        prob_y = prior[y]
-        prob_x1_given_y = get_probability(cond_x1, y, x1)
-        prob_x2_given_y = get_probability(cond_x2, y, x2)
-        # P(Y, X1, X2) = P(Y) * P(X1|Y) * P(X2|Y)
-        unnormalized[y] = prob_y * prob_x1_given_y * prob_x2_given_y
+        #filter the training rows where Y=y
+        data_y = train[train[target_column] == y]
+        total_count_y = len(data_y) #number of rows where Y=y
+
+        #count the numbr of times each feature appears given Y=y
+        feature_counts = data_y[feature_column].value_counts().to_dict()
+
+        #use laplace smoothing: P(X=x | Y=y) = (count(X=x, Y=y) + 1) / (count(Y=y) + |unique X values|)
+        #laplace s used to to avoid zero probabilties which break 
+        for feature_value in unique_features:
+            count = feature_counts.get(feature_value, 0)  #0 if feature never appears with Y=y
+            cpt[y][feature_value] = (count + 1) / (total_count_y + num_unique_features)
     
-    # Normalize to get P(Y | X1, X2)
+    return cpt
+
+def compute_posterior(x1, x2, priors, cpt_x1, cpt_x2):
+    """
+    compute the posterior probabilities P(Y | X1=x1, X2=x2) using inference by enumeration.
+    Arguments:
+    - x1: glucose level vlaue
+    - x2: blood pressure level vlaue 
+    - priors: dictionary with P(Y)
+    - cpt_x1: Conditional probability table for P(X1 | Y)
+    - cpt_x2: Conditional probability table for P(X2 | Y)
+
+    returns: dictionary with P(Y=0 | x1, x2) and P(Y=1 | x1, x2)
+    """
+
+    posteriors = {} #stores final normalized posterior values
+    unnormalized = {} #stores numerator values before normalization
+
+    #first: compute unnormalized posterior values for each class y=0 and y =1
+    #Naive Bayes formula (unnormalized)
+    #numerator = P(Y=y) * P(X1=x1 | Y=y) * P(X2=x2 | Y=y)
+    #we do not normalize in this step
+    for y in [0, 1]:
+        #P(Y=y) * P(X1=x1 | Y=y) * P(X2=x2 | Y=y)
+        prior_y = priors[y] #get prior probability P(Y=y)
+
+        #Get conditional probabilities from CPT table (use small value if not in training data) so that you do not assign a zero probability
+        p_x1_given_y = cpt_x1[y].get(x1, 1e-10)
+        p_x2_given_y = cpt_x2[y].get(x2, 1e-10)
+
+        #Compute the unnormalized joint probability
+        unnormalized[y] = prior_y * p_x1_given_y * p_x2_given_y
+
+    #now we can move onto normalization!
+    #Step 2: Normalize to conver unnormalized numbers into actual probabilities
+    #posterior formula: P(Y=y | X1, X2) = numerator_y / (numerator_0 + numerator_1) -> ensures that values sum to 1
     total = unnormalized[0] + unnormalized[1]
-    normalized = {y: unnormalized[y] / total for y in [0, 1]}
     
-    return normalized
+    if total > 0:
+        #normally - will divide each unnormalized probability by the sume
+        posteriors[0] = unnormalized[0] / total
+        posteriors[1] = unnormalized[1] / total
+    else:
+        #Edge case: both probabilities are zero, so we use uniform distribution (split 0.5 0.5)
+        posteriors[0] = 0.5
+        posteriors[1] = 0.5
+    
+    return posteriors
 
-
-def predict(posterior):
+def predict(test_data, priors, cpt_x1, cpt_x2):
     """
-    Make prediction based on posterior probabilities.
-    
-    Predict Y=1 if P(Y=1|X1,X2) > P(Y=0|X1,X2), otherwise predict Y=0.
-    
-    Args:
-        posterior (dict): {0: P(Y=0|X), 1: P(Y=1|X)}
+    generate predictions for test data and compute accuracyy
+    Arguments: 
+    - test_data: Test DataFrame
+    - priors: Prior probabilities P(Y)
+    - cpt_x1: CPT for P(X1 | Y)
+    - cpt_x2: CPT for P(X2 | Y)
         
-    Returns:
-        int: Predicted class (0 or 1)
+    Return: 
+    - predictions: List of predicted labels
+    - lookup_table: List of tuples (x1, x2, P(Y=1|x1,x2), P(Y=0|x1,x2))
+    - accuracy: Classification accuracy
     """
-    return 1 if posterior[1] > posterior[0] else 0
 
+    predictions = []    #Stores predicted class labels for each test example
+    lookup_table = []   #Stores posterior probabilities for reporting or inspection
 
-def calculate_accuracy(predictions, true_labels):
-    """
-    Calculate classification accuracy.
-    
-    Accuracy = Number of correct predictions / Total number of predictions
-    
-    Args:
-        predictions (list): Predicted labels
-        true_labels (list): True labels
+    #Iterate through every test example (row-by-row)
+    for idx, row in test_data.iterrows():
+        #Extract the feature values for this test sample
+        x1 = row['X1']
+        x2 = row['X2']
         
-    Returns:
-        float: Accuracy (between 0 and 1)
-    """
-    correct = sum(1 for pred, true in zip(predictions, true_labels) if pred == true)
-    return correct / len(predictions)
+        #Compute posterior probabilities using Naive Bayes
+        # posteriors[1] = P(Y=1 | X1=x1, X2=x2)
+        # posteriors[0] = P(Y=0 | X1=x1, X2=x2)
+        posteriors = compute_posterior(x1, x2, priors, cpt_x1, cpt_x2)
+        
+        #store information to the lookup table for debugging/printing
+        lookup_table.append((x1, x2, posteriors[1], posteriors[0]))
+        
+        #Make prediction: If P(Y=1 | X1,X2) is larger, classify as 1 OR classify as 0.
+        if posteriors[1] > posteriors[0]:
+            predictions.append(1)
+        else:
+            predictions.append(0)
+    
+    #calculate accuracy by comparing the predicted values with the true label test_data['y']
+    correct = sum(pred == true for pred, true in zip(predictions, test_data['Y']))
+    accuracy = correct / len(predictions) #fraction of correct predictions
+    
+    return predictions, lookup_table, accuracy
 
 
 def main():
     """
-    Main function to execute all parts of Question 2.
+    Main function used to do the diabetes prediction
     """
-    # Load the dataset
-    print("Loading Naive-Bayes-Classification-Data.csv...")
-    data = load_data('Naive-Bayes-Classification-Data.csv')
-    print(f"Total samples loaded: {len(data)}")
+
+    #load in dataset
+    data = load_dataset("Naive-Bayes-Classification-Data.csv")
+
+    #Perform stratified split
+    train_data, test_data = stratified_split(data, test_ratio=0.3, random_seed=42)
+
+
+    #QUESTION 2.1.1: Compute P(X)
+    print("2.1.1")
+    priors = compute_prior_Y(train_data)
+    print(f"P(Y=0) = {priors[0]:.6f}")
+    print(f"P(Y=1) = {priors[1]:.6f}")
+    print()
+
+    #QUESTION 2.1.2: Compute P(X1 | Y) (probability of x1 given y)
+    print("2.1.2")
+    cpt_x1 = compute_cpt(train_data, 'X1') #finding the conditional probability table
+    print("P(X1 | Y) -> Conditional Probability Table for Glucose:")
+    print("Format: P(X1=value | Y=class)")
+    print()
+
+    #Display some of the conditional probability table (first 10 unique X1 values for each class)
+    unique_x1 = sorted(train_data['X1'].unique())[:10]
+    #I have unique_x1 - a list/array of the unique possible values that X1 can take
+    #I also have cpt_x1, which is a conditional probablity table for P(X1 | Y)
+    for x1_val in unique_x1: #looping over every possible value of X1
+        #for each value it prints P(X1 = value from loop | Y=0) or P(X1 = value from loop | Y=0)
+        print(f" X1={x1_val}: P(X1={x1_val}|Y=0)={cpt_x1[0][x1_val]:.6f}, P(X1={x1_val}|Y=1)={cpt_x1[1][x1_val]:.6f}")
+    print("->(CPT computed for all unique glucose values)")
+    print()
+
+    #QUESTION 2.1.3: COMPUTE P(X2 | Y)
+    print("2.1.3")
+    cpt_x2 = compute_cpt(train_data, 'X2') #finding the conditional probability table
+    print("P(X2 | Y) - Conditional Probability Table for Blood Pressure:")
+    print("Format: P(X2=value | Y=class)")
+    print()
+    #Display some of the conditional probability table (first 10 unique X2 values for each class)
+    unique_x2 = sorted(train_data['X2'].unique())[:10]
+
+    #unique_x2 is the list/array for unique values x2 can take
+    for x2_val in unique_x2:
+        #for each value it prints P(X2 = value from loop | Y=0) or P(X2 = value from loop | Y=0)
+        print(f"X2={x2_val}: P(X2={x2_val}|Y=0)={cpt_x2[0][x2_val]:.6f}, P(X2={x2_val}|Y=1)={cpt_x2[1][x2_val]:.6f}")
+    print("-> (CPT computed for all unique blood pressure values)")
+    print()
+
+
+    # QUESTION 2.2.1: Inference by Enumeration ==========
+    print("2.2.1")
+    print("Inference by Enumeration - Computing P(Y | X1, X2) for test data")
+    print("Sample calculations for first 5 test examples:")
+    print()
+    for idx in range(min(5, len(test_data))): #looping thorough 5 test samples of the test data.
+        row = test_data.iloc[idx]
+        x1, x2 = row['X1'], row['X2']
+        posteriors = compute_posterior(x1, x2, priors, cpt_x1, cpt_x2) #Finding the prior probability 
+        print(f"Test example {idx+1}: X1={x1}, X2={x2}")
+        print(f"  P(Y=1 | X1={x1}, X2={x2}) = {posteriors[1]:.6f}") #printing to 6 decimal places 
+        print(f"  P(Y=0 | X1={x1}, X2={x2}) = {posteriors[0]:.6f}")
+    print("-> (computed for all test examples)")
+    print()
+
+    #question 2.2.2: lOOKUP table
+    print("2.2.2")
+    print("Lookup Table for P(Y | X1, X2) on Test Data")
+    print("Format: X1, X2, P(Y=1|X1,X2), P(Y=0|X1,X2)")
+    print()
+    predictions, lookup_table, accuracy = predict(test_data, priors, cpt_x1, cpt_x2)
     
-    # Perform stratified split: 70% training, 30% testing
-    train_data, test_data = stratified_split(data, train_ratio=0.7)
-    print(f"Training samples: {len(train_data)}")
-    print(f"Testing samples: {len(test_data)}")
-    
-    # Count class distribution
-    train_y0 = sum(1 for _, _, y in train_data if y == 0)
-    train_y1 = sum(1 for _, _, y in train_data if y == 1)
-    test_y0 = sum(1 for _, _, y in test_data if y == 0)
-    test_y1 = sum(1 for _, _, y in test_data if y == 1)
-    print(f"Training set - Y=0: {train_y0}, Y=1: {train_y1}")
-    print(f"Testing set - Y=0: {test_y0}, Y=1: {test_y1}")
+    #Display first 10 entries of lookup table
+    print("First 10 entries:")
+    for i in range(min(10, len(lookup_table))): #whatever is smaller between 10 and the length of the lookup table
+        x1, x2, p_y1, p_y0 = lookup_table[i]
+        print(f"X1={x1}, X2={x2}: P(Y=1)={p_y1:.6f}, P(Y=0)={p_y0:.6f}")
+    print(f"... (total {len(lookup_table)} test examples)")
+    print()
+
+
+    #QUESTION 2.3: Predictions and the accuracy of predictions
+    print("2.3")
+    print("Predictions and Model Evaluation")
+    print()
+    print("Sample predictions (first 10 test examples):")
+    for i in range(min(10, len(predictions))):
+        x1, x2 = test_data.iloc[i]['X1'], test_data.iloc[i]['X2']
+        true_label = test_data.iloc[i]['Y']
+        pred_label = predictions[i]
+        p_y1, p_y0 = lookup_table[i][2], lookup_table[i][3]
+        print(f"X1={x1}, X2={x2}: Predicted Y={pred_label}, True Y={true_label}, P(Y=1)={p_y1:.4f}")
+    print("...")
+    print()
+    print(f"Total test examples: {len(test_data)}")
+    print(f"Correct predictions: {sum(pred == true for pred, true in zip(predictions, test_data['Y']))}")
+    print(f"Model Accuracy: {accuracy:.6f} ({accuracy*100:.2f}%)")
     print()
     
-    # ========================================================================
-    # Q2.1: Compute Conditional Probability Tables (CPTs)
-    # ========================================================================
-    print("=" * 80)
-    print("Q2.1: Computing Conditional Probability Tables using Training Data")
-    print("=" * 80)
-    print()
-    
-    # 2.1.1: Compute P(Y)
-    print("2.1.1 P(Y): Prior probabilities of diabetes diagnosis")
-    print("-" * 80)
-    prior = compute_prior(train_data)
-    print(f"P(Y=0) [No Diabetes]  = {prior[0]:.6f}")
-    print(f"P(Y=1) [Diabetes]     = {prior[1]:.6f}")
-    print()
-    
-    # 2.1.2: Compute P(X1 | Y)
-    print("2.1.2 P(X1 | Y): Conditional probabilities of glucose level given Y")
-    print("-" * 80)
-    cond_x1 = compute_conditional_prob(train_data, feature_index=0)
-    
-    # Remove smoothing metadata for counting
-    num_unique_x1 = len([k for k in cond_x1[0].keys()])
-    print(f"Number of unique glucose levels (X1) in training data: {num_unique_x1}")
-    print(f"Conditional probability table P(X1 | Y) computed with Laplace smoothing")
-    print()
-    print("Sample conditional probabilities (first 5 glucose values):")
-    sample_x1_values = sorted(list(cond_x1[0].keys()))[:5]
-    for val in sample_x1_values:
-        prob_y0 = cond_x1[0][val]
-        prob_y1 = cond_x1[1][val]
-        print(f"  X1={val:3d}: P(X1={val}|Y=0) = {prob_y0:.6f}, P(X1={val}|Y=1) = {prob_y1:.6f}")
-    print()
-    
-    # 2.1.3: Compute P(X2 | Y)
-    print("2.1.3 P(X2 | Y): Conditional probabilities of blood pressure level given Y")
-    print("-" * 80)
-    cond_x2 = compute_conditional_prob(train_data, feature_index=1)
-    
-    num_unique_x2 = len([k for k in cond_x2[0].keys()])
-    print(f"Number of unique blood pressure levels (X2) in training data: {num_unique_x2}")
-    print(f"Conditional probability table P(X2 | Y) computed with Laplace smoothing")
-    print()
-    print("Sample conditional probabilities (first 5 blood pressure values):")
-    sample_x2_values = sorted(list(cond_x2[0].keys()))[:5]
-    for val in sample_x2_values:
-        prob_y0 = cond_x2[0][val]
-        prob_y1 = cond_x2[1][val]
-        print(f"  X2={val:3d}: P(X2={val}|Y=0) = {prob_y0:.6f}, P(X2={val}|Y=1) = {prob_y1:.6f}")
-    print()
-    
-    # ========================================================================
-    # Q2.2: Implementing Inference by Enumeration
-    # ========================================================================
-    print("=" * 80)
-    print("Q2.2: Implementing Inference by Enumeration")
-    print("=" * 80)
-    print()
-    
-    # 2.2.1: Write code to answer the inference query P(Y | X1, X2)
-    print("2.2.1 Inference Query: Computing P(Y | X1, X2)")
-    print("-" * 80)
-    print("Using the formula:")
-    print("  P(Y | X1, X2) ∝ P(Y) * P(X1 | Y) * P(X2 | Y)")
-    print()
-    print("The conditional independence assumption allows us to decompose:")
-    print("  P(X1, X2 | Y) = P(X1 | Y) * P(X2 | Y)")
-    print()
-    print(f"Computing posterior probabilities for all {len(test_data)} test samples...")
-    
-    # Compute posteriors for all test data points
-    posteriors = []
-    for x1, x2, _ in test_data:
-        posterior = inference(x1, x2, prior, cond_x1, cond_x2)
-        posteriors.append(posterior)
-    
-    print(f"Successfully computed P(Y | X1, X2) for {len(posteriors)} test points")
-    print()
-    
-    # 2.2.2: Generate a lookup table for P(Y | X1, X2)
-    print("2.2.2 Lookup Table: P(Y | X1, X2) for Test Data")
-    print("-" * 80)
-    print(f"{'X1':<8} {'X2':<8} {'P(Y=0|X1,X2)':<18} {'P(Y=1|X1,X2)':<18} {'True Y':<8}")
-    print("-" * 80)
-    
-    # Display lookup table for all test samples (or first 30 if too many)
-    display_limit = min(30, len(test_data))
-    for i in range(display_limit):
-        x1, x2, true_y = test_data[i]
-        posterior = posteriors[i]
-        print(f"{x1:<8} {x2:<8} {posterior[0]:<18.6f} {posterior[1]:<18.6f} {true_y:<8}")
-    
-    if len(test_data) > display_limit:
-        print(f"... (showing first {display_limit} of {len(test_data)} test samples)")
-    print()
-    
-    # ========================================================================
-    # Q2.3: Generate Predictions
-    # ========================================================================
-    print("=" * 80)
-    print("Q2.3: Generate Predictions and Compute Accuracy")
-    print("=" * 80)
-    print()
-    
-    # 2.3.1: Make predictions for each test data point
-    print("2.3.1 Making Predictions")
-    print("-" * 80)
-    print("Prediction rule: Predict Y=1 if P(Y=1|X1,X2) > P(Y=0|X1,X2), else predict Y=0")
-    print()
-    
-    predictions = []
-    for posterior in posteriors:
-        pred = predict(posterior)
-        predictions.append(pred)
-    
-    true_labels = [y for _, _, y in test_data]
-    
-    # Show sample predictions
-    print("Sample predictions (first 10 test samples):")
-    print(f"{'X1':<8} {'X2':<8} {'P(Y=1|X1,X2)':<15} {'Predicted Y':<13} {'True Y':<10} {'Correct?'}")
-    print("-" * 80)
-    for i in range(min(10, len(test_data))):
-        x1, x2, true_y = test_data[i]
-        posterior = posteriors[i]
-        pred = predictions[i]
-        correct = "✓" if pred == true_y else "✗"
-        print(f"{x1:<8} {x2:<8} {posterior[1]:<15.6f} {pred:<13} {true_y:<10} {correct}")
-    print()
-    
-    # 2.3.2: Compute the model's accuracy
-    print("2.3.2 Computing Model Accuracy")
-    print("-" * 80)
-    
-    accuracy = calculate_accuracy(predictions, true_labels)
-    correct_count = sum(1 for p, t in zip(predictions, true_labels) if p == t)
-    total_count = len(predictions)
-    
-    print(f"Total number of predictions: {total_count}")
-    print(f"Number of correct predictions: {correct_count}")
-    print(f"Number of incorrect predictions: {total_count - correct_count}")
-    print()
-    print(f"Accuracy = Number of correct predictions / Total number of predictions")
-    print(f"Accuracy = {correct_count} / {total_count}")
-    print(f"Accuracy = {accuracy:.6f}")
-    print(f"Accuracy = {accuracy * 100:.2f}%")
-    print()
-    
-    # Additional evaluation metrics
-    print("Detailed Performance Breakdown:")
-    print("-" * 80)
-    tp = sum(1 for p, t in zip(predictions, true_labels) if p == 1 and t == 1)
-    tn = sum(1 for p, t in zip(predictions, true_labels) if p == 0 and t == 0)
-    fp = sum(1 for p, t in zip(predictions, true_labels) if p == 1 and t == 0)
-    fn = sum(1 for p, t in zip(predictions, true_labels) if p == 0 and t == 1)
-    
-    print(f"True Positives (correctly predicted diabetes):     {tp}")
-    print(f"True Negatives (correctly predicted no diabetes):  {tn}")
-    print(f"False Positives (incorrectly predicted diabetes):  {fp}")
-    print(f"False Negatives (incorrectly predicted no diabetes): {fn}")
-    print()
-    
-    print("=" * 80)
-    print("Question 2 Complete!")
-    print("=" * 80)
 
 
 if __name__ == "__main__":

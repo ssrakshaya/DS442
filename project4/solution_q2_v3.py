@@ -1,0 +1,112 @@
+import pandas as pd
+import numpy as np
+from collections import defaultdict
+
+
+
+def main():
+    """
+    Main function used to do the diabetes prediction
+    """
+
+    #load in dataset
+    data = load_dataset("Naive-Bayes-Classification-Data.csv")
+
+    #Perform stratified split
+    train_data, test_data = stratified_split(data, test_ratio=0.3, random_seed=42)
+
+
+    #QUESTION 2.1.1: Compute P(X)
+    print("2.1.1")
+    priors = compute_prior_Y(train_data)
+    print(f"P(Y=0) = {priors[0]:.6f}")
+    print(f"P(Y=1) = {priors[1]:.6f}")
+    print()
+
+    #QUESTION 2.1.2: Compute P(X1 | Y) (probability of x1 given y)
+    print("2.1.2")
+    cpt_x1 = compute_cpt(train_data, 'X1') #finding the conditional probability table
+    print("P(X1 | Y) -> Conditional Probability Table for Glucose:")
+    print("Format: P(X1=value | Y=class)")
+    print()
+
+    #Display some of the conditional probability table (first 10 unique X1 values for each class)
+    unique_x1 = sorted(train_data['X1'].unique())[:10]
+    #I have unique_x1 - a list/array of the unique possible values that X1 can take
+    #I also have cpt_x1, which is a conditional probablity table for P(X1 | Y)
+    for x1_val in unique_x1: #looping over every possible value of X1
+        #for each value it prints P(X1 = value from loop | Y=0) or P(X1 = value from loop | Y=0)
+        print(f" X1={x1_val}: P(X1={x1_val}|Y=0)={cpt_x1[0][x1_val]:.6f}, P(X1={x1_val}|Y=1)={cpt_x1[1][x1_val]:.6f}")
+    print("->(CPT computed for all unique glucose values)")
+    print()
+
+    #QUESTION 2.1.3: COMPUTE P(X2 | Y)
+    print("2.1.3")
+    cpt_x2 = compute_cpt(train_data, 'X2') #finding the conditional probability table
+    print("P(X2 | Y) - Conditional Probability Table for Blood Pressure:")
+    print("Format: P(X2=value | Y=class)")
+    print()
+    #Display some of the conditional probability table (first 10 unique X2 values for each class)
+    unique_x2 = sorted(train_data['X2'].unique())[:10]
+
+    #unique_x2 is the list/array for unique values x2 can take
+    for x2_val in unique_x2:
+        #for each value it prints P(X2 = value from loop | Y=0) or P(X2 = value from loop | Y=0)
+        print(f"X2={x2_val}: P(X2={x2_val}|Y=0)={cpt_x2[0][x2_val]:.6f}, P(X2={x2_val}|Y=1)={cpt_x2[1][x2_val]:.6f}")
+    print("-> (CPT computed for all unique blood pressure values)")
+    print()
+
+
+    # QUESTION 2.2.1: Inference by Enumeration ==========
+    print("2.2.1")
+    print("Inference by Enumeration - Computing P(Y | X1, X2) for test data")
+    print("Sample calculations for first 5 test examples:")
+    print()
+    for idx in range(min(5, len(test_data))): #looping thorough 5 test samples of the test data.
+        row = test_data.iloc[idx]
+        x1, x2 = row['X1'], row['X2']
+        posteriors = compute_posterior(x1, x2, priors, cpt_x1, cpt_x2) #Finding the prior probability 
+        print(f"Test example {idx+1}: X1={x1}, X2={x2}")
+        print(f"  P(Y=1 | X1={x1}, X2={x2}) = {posteriors[1]:.6f}") #printing to 6 decimal places 
+        print(f"  P(Y=0 | X1={x1}, X2={x2}) = {posteriors[0]:.6f}")
+    print("-> (computed for all test examples)")
+    print()
+
+    #question 2.2.2: lOOKUP table
+    print("2.2.2")
+    print("Lookup Table for P(Y | X1, X2) on Test Data")
+    print("Format: X1, X2, P(Y=1|X1,X2), P(Y=0|X1,X2)")
+    print()
+    predictions, lookup_table, accuracy = predict(test_data, priors, cpt_x1, cpt_x2)
+    
+    #Display first 10 entries of lookup table
+    print("First 10 entries:")
+    for i in range(min(10, len(lookup_table))): #whatever is smaller between 10 and the length of the lookup table
+        x1, x2, p_y1, p_y0 = lookup_table[i]
+        print(f"X1={x1}, X2={x2}: P(Y=1)={p_y1:.6f}, P(Y=0)={p_y0:.6f}")
+    print(f"... (total {len(lookup_table)} test examples)")
+    print()
+
+
+    #QUESTION 2.3: Predictions and the accuracy of predictions
+    print("2.3")
+    print("Predictions and Model Evaluation")
+    print()
+    print("Sample predictions (first 10 test examples):")
+    for i in range(min(10, len(predictions))):
+        x1, x2 = test_data.iloc[i]['X1'], test_data.iloc[i]['X2']
+        true_label = test_data.iloc[i]['Y']
+        pred_label = predictions[i]
+        p_y1, p_y0 = lookup_table[i][2], lookup_table[i][3]
+        print(f"X1={x1}, X2={x2}: Predicted Y={pred_label}, True Y={true_label}, P(Y=1)={p_y1:.4f}")
+    print("...")
+    print()
+    print(f"Total test examples: {len(test_data)}")
+    print(f"Correct predictions: {sum(pred == true for pred, true in zip(predictions, test_data['Y']))}")
+    print(f"Model Accuracy: {accuracy:.6f} ({accuracy*100:.2f}%)")
+    print()
+    
+
+
+if __name__ == "__main__":
+    main()

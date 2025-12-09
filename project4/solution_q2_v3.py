@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 from collections import defaultdict
+import sklearn
+from sklearn.model_selection import train_test_split
 
 
 def load_dataset(filepath='Naive-Bayes-Classification-Data.csv'):
@@ -29,6 +31,52 @@ def stratified_split(data, test_ratio = 0.3, random_seed = 42):
     returns:
     - train_data, test_data - which are the two dataframes with training and testing data
     """
+
+
+    #VERSION UTILIZING SKLEARN
+    X = data[['X1', 'X2']]
+    y = data['Y']
+
+    X_train, X_test, y_train, y_test = test_train_split(X, y, test_size = test_ratio, stratify=y, random_state =random_seed)
+
+    train_data = pd.concat([X_train, y_train], axis = 1)
+    test_data = pd.concat([X_test, y_test], axis = 1)
+
+    return train_data, test_data
+
+
+
+    #VERSION WITHOUT SK LEARN
+    np.random.seed(random_seed)
+    
+    # Separate data by class
+    class_0 = data[data['Y'] == 0].copy()
+    class_1 = data[data['Y'] == 1].copy()
+    
+    # Shuffle each class
+    class_0 = class_0.sample(frac=1, random_state=random_seed).reset_index(drop=True)
+    class_1 = class_1.sample(frac=1, random_state=random_seed).reset_index(drop=True)
+    
+    # Calculate split indices
+    test_size_0 = int(len(class_0) * test_ratio)
+    test_size_1 = int(len(class_1) * test_ratio)
+    
+    # Split each class
+    test_0 = class_0[:test_size_0]
+    train_0 = class_0[test_size_0:]
+    
+    test_1 = class_1[:test_size_1]
+    train_1 = class_1[test_size_1:]
+    
+    # Combine train and test sets
+    train_data = pd.concat([train_0, train_1], ignore_index=True)
+    test_data = pd.concat([test_0, test_1], ignore_index=True)
+    
+    # Shuffle the combined sets
+    train_data = train_data.sample(frac=1, random_state=random_seed).reset_index(drop=True)
+    test_data = test_data.sample(frac=1, random_state=random_seed).reset_index(drop=True)
+    
+    return train_data, test_data
 
 
 

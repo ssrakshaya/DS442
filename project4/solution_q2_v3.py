@@ -138,7 +138,67 @@ def compute_cpt(train, feature_column, target_column = "Y"):
     
     return cpt
 
+def compute_posterior(x1, x2, priors, cpt_x1, cpt_x2):
+    """
+    compute the posterior probabilities P(Y | X1=x1, X2=x2) using inference by enumeration.
+    Arguments:
+    - x1: glucose level vlaue
+    - x2: blood pressure level vlaue 
+    - priors: dictionary with P(Y)
+    - cpt_x1: Conditional probability table for P(X1 | Y)
+    - cpt_x2: Conditional probability table for P(X2 | Y)
 
+    returns: dictionary with P(Y=0 | x1, x2) and P(Y=1 | x1, x2)
+    """
+
+    posteriors = {} #stores final normalized posterior values
+    unnormalized = {} #stores numerator values before normalization
+
+    #first: compute unnormalized posterior values for each class y=0 and y =1
+    #Naive Bayes formula (unnormalized)
+    #numerator = P(Y=y) * P(X1=x1 | Y=y) * P(X2=x2 | Y=y)
+    #we do not normalize in this step
+    for y in [0, 1]:
+        #P(Y=y) * P(X1=x1 | Y=y) * P(X2=x2 | Y=y)
+        prior_y = priors[y] #get prior probability P(Y=y)
+
+        #Get conditional probabilities from CPT table (use small value if not in training data) so that you do not assign a zero probability
+        p_x1_given_y = cpt_x1[y].get(x1, 1e-10)
+        p_x2_given_y = cpt_x2[y].get(x2, 1e-10)
+
+        #Compute the unnormalized joint probability
+        unnormalized[y] = prior_y * p_x1_given_y * p_x2_given_y
+
+    #now we can move onto normalization!
+    #Step 2: Normalize to conver unnormalized numbers into actual probabilities
+    #posterior formula: P(Y=y | X1, X2) = numerator_y / (numerator_0 + numerator_1) -> ensures that values sum to 1
+    total = unnormalized[0] + unnormalized[1]
+    
+    if total > 0:
+        #normally - will divide each unnormalized probability by the sume
+        posteriors[0] = unnormalized[0] / total
+        posteriors[1] = unnormalized[1] / total
+    else:
+        #Edge case: both probabilities are zero, so we use uniform distribution (split 0.5 0.5)
+        posteriors[0] = 0.5
+        posteriors[1] = 0.5
+    
+    return posteriors
+
+def predict(test_data, priors, cpt_x1, cpt_x2):
+    """
+    generate predictions for test data and compute accuracyy
+    Arguments: 
+    - test_data: Test DataFrame
+    - priors: Prior probabilities P(Y)
+    - cpt_x1: CPT for P(X1 | Y)
+    - cpt_x2: CPT for P(X2 | Y)
+        
+    Return: 
+    - predictions: List of predicted labels
+    - lookup_table: List of tuples (x1, x2, P(Y=1|x1,x2), P(Y=0|x1,x2))
+    - accuracy: Classification accuracy
+    """
 
 
 

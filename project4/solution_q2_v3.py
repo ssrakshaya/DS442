@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from collections import defaultdict
-import sklearn
 from sklearn.model_selection import train_test_split
 
 
@@ -124,7 +123,7 @@ def compute_cpt(train, feature_column, target_column = "Y"):
     #Find the conditional probability table for each class
     for y in [0, 1]:
         #filter the training rows where Y=y
-        data_y = train[train[target_column]].unique()
+        data_y = train[train[target_column] == y]
         total_count_y = len(data_y) #number of rows where Y=y
 
         #count the numbr of times each feature appears given Y=y

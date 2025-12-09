@@ -200,6 +200,34 @@ def predict(test_data, priors, cpt_x1, cpt_x2):
     - accuracy: Classification accuracy
     """
 
+    predictions = []    #Stores predicted class labels for each test example
+    lookup_table = []   #Stores posterior probabilities for reporting or inspection
+
+    #Iterate through every test example (row-by-row)
+    for idx, row in test_data.iterrows():
+        #Extract the feature values for this test sample
+        x1 = row['X1']
+        x2 = row['X2']
+        
+        #Compute posterior probabilities using Naive Bayes
+        # posteriors[1] = P(Y=1 | X1=x1, X2=x2)
+        # posteriors[0] = P(Y=0 | X1=x1, X2=x2)
+        posteriors = compute_posterior(x1, x2, priors, cpt_x1, cpt_x2)
+        
+        #store information to the lookup table for debugging/printing
+        lookup_table.append((x1, x2, posteriors[1], posteriors[0]))
+        
+        #Make prediction: If P(Y=1 | X1,X2) is larger, classify as 1 OR classify as 0.
+        if posteriors[1] > posteriors[0]:
+            predictions.append(1)
+        else:
+            predictions.append(0)
+    
+    #calculate accuracy by comparing the predicted values with the true label test_data['y']
+    correct = sum(pred == true for pred, true in zip(predictions, test_data['Y']))
+    accuracy = correct / len(predictions) #fraction of correct predictions
+    
+    return predictions, lookup_table, accuracy
 
 
 def main():
